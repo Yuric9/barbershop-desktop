@@ -1,0 +1,102 @@
+/* Camada visual complementar do desktop modernizado. */
+
+.cash-form > [data-ui-hidden="true"]{display:none!important}
+.cash-form{grid-template-columns:repeat(4,minmax(155px,1fr));align-items:end}
+.cash-form>[data-cash-role="kind"]{order:1}
+.cash-form>[data-cash-role="service"]{order:2}
+.cash-form>[data-cash-role="amount"]{order:3}
+.cash-form>[data-cash-role="client"]{order:4}
+.cash-form>[data-cash-role="date"]{order:5}
+.cash-form>[data-cash-role="payment"]{order:6}
+.cash-form>[data-cash-role="staff"]{order:7}
+.cash-form>[data-cash-role="submit"]{order:8;min-height:44px}
+.cash-reset-note{order:9;grid-column:1/-1;border-top:1px solid #29292e;padding:11px 2px 0;color:#9d9da6;font-size:12px;line-height:1.45}
+
+.cash-kpi-visual{position:relative;padding-left:74px!important;overflow:hidden}
+.cash-kpi-visual:before{content:"";position:absolute;left:17px;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:24px;font-weight:700;border:1px solid transparent}
+.cash-kpi-income:before{content:"↑";color:#a8efb9;background:#153b20;border-color:#28633a}
+.cash-kpi-expense:before{content:"↓";color:#ffaaaa;background:#48191b;border-color:#813238}
+.cash-kpi-commission:before{content:"%";color:#deb8ff;background:#342044;border-color:#604077}
+.cash-kpi-balance:before{content:"▣";color:#f0cf72;background:#443515;border-color:#745b22}
+
+.ui-theme-card{display:flex;align-items:center;justify-content:space-between;gap:18px;grid-column:1/-1!important;margin-top:0!important}
+.ui-theme-copy h2{margin-bottom:6px}.ui-theme-copy p{margin:0}
+.ui-theme-switch{display:flex!important;align-items:center;gap:10px;min-width:160px;justify-content:center}
+.ui-theme-track{width:48px;height:26px;border-radius:999px;background:#29292e;border:1px solid #44444a;padding:2px;display:flex;align-items:center;transition:.2s ease}
+.ui-theme-knob{width:20px;height:20px;border-radius:50%;background:#f3f3f4;display:block;transition:.2s ease}
+.ui-theme-switch.is-light .ui-theme-track{background:#c7a44a;border-color:#b38e33}
+.ui-theme-switch.is-light .ui-theme-knob{transform:translateX(21px);background:#fff}
+.ui-theme-label{font-size:13px;font-weight:650}
+
+:root[data-theme="light"]{color:#202124;background:#f4f4f2}
+:root[data-theme="light"] body{background:#f4f4f2;color:#202124}
+:root[data-theme="light"] aside{background:#fbfbfa;border-color:#d9d9d4}
+:root[data-theme="light"] .brand{border-color:#dfdfda}
+:root[data-theme="light"] .brand small,
+:root[data-theme="light"] small,
+:root[data-theme="light"] .muted,
+:root[data-theme="light"] .kpi span,
+:root[data-theme="light"] .stat span,
+:root[data-theme="light"] .metric span{color:#666970}
+:root[data-theme="light"] aside>button{color:#4f5258}
+:root[data-theme="light"] aside>button:hover{background:#efeee9}
+:root[data-theme="light"] aside>button.active{background:#f2e7c8;border-color:#c7a44a;color:#3f3212}
+:root[data-theme="light"] .card{background:#fff;border-color:#dadad5;box-shadow:0 8px 25px #0000000d}
+:root[data-theme="light"] .form input,
+:root[data-theme="light"] .form select,
+:root[data-theme="light"] .appointment-form input,
+:root[data-theme="light"] .appointment-form select,
+:root[data-theme="light"] .filter input,
+:root[data-theme="light"] .filter select,
+:root[data-theme="light"] .date-field,
+:root[data-theme="light"] .settings-form input,
+:root[data-theme="light"] .settings-form select,
+:root[data-theme="light"] .settings-form textarea,
+:root[data-theme="light"] .drawer input,
+:root[data-theme="light"] .drawer select,
+:root[data-theme="light"] .drawer textarea,
+:root[data-theme="light"] .card>select,
+:root[data-theme="light"] .stack textarea,
+:root[data-theme="light"] .opening-hour-row input{background:#fafaf8;color:#202124;border-color:#cfcfca}
+:root[data-theme="light"] .service-picker label,
+:root[data-theme="light"] .slot,
+:root[data-theme="light"] .diagnostics .metric,
+:root[data-theme="light"] .diagnostics .wide,
+:root[data-theme="light"] .checkout-total{background:#f8f8f5;border-color:#d7d7d2}
+:root[data-theme="light"] .data-row,
+:root[data-theme="light"] .row,
+:root[data-theme="light"] .cash-row,
+:root[data-theme="light"] .appointment,
+:root[data-theme="light"] .report-row,
+:root[data-theme="light"] .metric,
+:root[data-theme="light"] .opening-hour-row,
+:root[data-theme="light"] .backup-row,
+:root[data-theme="light"] .cash-reset-note{border-color:#e1e1dc}
+:root[data-theme="light"] .data-row span,
+:root[data-theme="light"] .appointment span,
+:root[data-theme="light"] .report-row span{color:#45484e}
+:root[data-theme="light"] .drawer{background:#fff;border-color:#d7d7d2}
+:root[data-theme="light"] .drawer-backdrop{background:#0005}
+:root[data-theme="light"] .row-actions button,
+:root[data-theme="light"] .filter button,
+:root[data-theme="light"] .secondary,
+:root[data-theme="light"] .card button,
+:root[data-theme="light"] .drawer button,
+:root[data-theme="light"] .form button{background:#f7f7f4;color:#25272b;border-color:#d0d0cb}
+:root[data-theme="light"] .row-actions button:hover,
+:root[data-theme="light"] .filter button:hover,
+:root[data-theme="light"] .card button:hover{background:#ecece7}
+:root[data-theme="light"] .primary{background:#c7a44a!important;color:#17130a!important;border-color:#b9953e!important}
+:root[data-theme="light"] .danger{background:#fff5f5!important;color:#a62c35!important;border-color:#d98a90!important}
+:root[data-theme="light"] .notice{background:#e9f7ed;border-color:#abd4b6;color:#22552e}
+:root[data-theme="light"] .error{background:#fff0f1;border-color:#e0a0a5;color:#8a2028}
+:root[data-theme="light"] .warning{background:#fff7df;border-color:#d8bf75;color:#665116}
+:root[data-theme="light"] .summary{background:#f8efd5;color:#665016}
+:root[data-theme="light"] .onboarding,
+:root[data-theme="light"] .loading-screen{background:radial-gradient(circle at top,#f5ead0 0,#f4f4f2 48%);color:#303238}
+:root[data-theme="light"] .onboarding-card{background:#fff;border-color:#d9d4c9;box-shadow:0 30px 80px #0002}
+:root[data-theme="light"] .shortcut-help{color:#777a80}
+
+@media(max-width:1250px){.cash-form{grid-template-columns:repeat(3,minmax(150px,1fr))}}
+@media(max-width:1000px){.cash-form{grid-template-columns:repeat(2,minmax(150px,1fr))}.ui-theme-card{align-items:flex-start;flex-direction:column}.ui-theme-switch{width:100%}}
+@media(max-width:760px){.cash-form{grid-template-columns:1fr}.cash-kpi-visual{padding-left:70px!important}}
