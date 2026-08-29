@@ -16,11 +16,27 @@ jobs:
   build-windows:
     runs-on: windows-latest
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Apply Rust syntax fix
+        shell: pwsh
+        run: |
+          $path = "src-tauri/src/operations.rs"
+          $text = Get-Content -Raw $path
+          $text = $text.Replace('tx.execute("DELETE FROM stock_movements WHERE id=?1",params![movement_id]).map_err(|e|e.to_string())?}}if', 'tx.execute("DELETE FROM stock_movements WHERE id=?1",params![movement_id]).map_err(|e|e.to_string())?;}}if')
+          $text = $text.Replace('tx.execute("UPDATE appointments SET status=''Confirmado'',payment_method='''',cash_transaction_id=NULL WHERE id=?1",params![appointment_id]).map_err(|e|e.to_string())?}}tx', 'tx.execute("UPDATE appointments SET status=''Confirmado'',payment_method='''',cash_transaction_id=NULL WHERE id=?1",params![appointment_id]).map_err(|e|e.to_string())?;}}tx')
+          Set-Content -Path $path -Value $text -Encoding UTF8
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add $path
+          if (-not (git diff --cached --quiet)) {
+            git commit -m "fix: corrige sintaxe da exclusão de lançamentos"
+            git push origin HEAD:main
+          }
 
       - name: Setup Node
         uses: actions/setup-node@v4
