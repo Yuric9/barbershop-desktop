@@ -1,54 +1,36 @@
-# Windows build and pilot distribution
+# Build do Windows
 
-The desktop edition is built only from the `desktop-white-label-foundation` branch while it is under development.
+O aplicativo desktop é compilado somente a partir deste repositório: `Yuric9/barbershop-desktop`.
 
-## GitHub Actions build
+## GitHub Actions
 
-Workflow: `.github/workflows/desktop-windows-build.yml`
+Workflow: `.github/workflows/windows-build.yml`
 
-The workflow builds on `windows-latest` with Node 22, Rust stable, Vite and Tauri 2.
+A build usa `windows-latest`, Node 22, Rust stable, Vite e Tauri 2. O próprio workflow gera um ícone neutro de barbearia e cria os ícones de plataforma antes da compilação.
 
-Expected artifacts:
+Artefatos esperados para a versão 0.2.0:
 
-1. `GestaoBarbearia-Windows-Portable`
+1. `GestaoBarbearia-v0.2.0-Portable`
    - `GestaoBarbearia.exe`
    - `portable.flag`
    - `LEIA-ME.txt`
-   - on first run the application creates `barbershop-data/` beside the executable.
+   - na primeira execução, o aplicativo cria `barbershop-data/` ao lado do executável.
 
-2. `GestaoBarbearia-Windows-Setup`
-   - NSIS Windows installer (`.exe`).
+2. `GestaoBarbearia-v0.2.0-Instalador`
+   - instalador NSIS do Windows (`.exe`).
 
-3. `GestaoBarbearia-Windows-MSI`
-   - MSI Windows installer (`.msi`).
+## Modo portátil
 
-## Portable pilot rule
+A cópia portátil deve permanecer em uma pasta gravável. Quando `portable.flag` está ao lado do executável, banco, configuração e backups ficam sob `barbershop-data/` ao lado do programa.
 
-The portable copy must remain in one writable folder. When `portable.flag` is beside the executable, the program stores the database and writable business files under `barbershop-data/` beside the application.
+Não remova um pendrive enquanto o programa estiver aberto. Faça backup antes de formatar, substituir ou mover o dispositivo.
 
-Do not remove a USB drive while the program is open. Create a backup before formatting, replacing or moving the storage device.
+## Modo instalado
 
-## Installed mode
+Sem `portable.flag`, os dados graváveis ficam na pasta de dados do aplicativo do Windows resolvida pelo Tauri. Atualizar o instalador substitui os binários sem substituir automaticamente o banco `barbershop.db`.
 
-The installer does not place the live business database inside the application installation directory. Without `portable.flag`, writable business data is stored in the Windows application-data location resolved by Tauri.
+## Validação antes de considerar estável
 
-This lets future program updates replace binaries without replacing the local `barbershop.db`.
+A build deve passar por: abertura sem internet; persistência após reiniciar; criação/edição/exclusão de cadastros; conflito de Agenda; finalização da Agenda criando apenas um lançamento; lançamento manual de Serviço contando atendimento; exclusão removendo o valor dos cálculos; exclusão de produto restaurando estoque; cálculo de comissão; fechamento e reabertura de colaboradores; relatórios líquidos de comissão; backup, verificação de integridade e restauração segura; modo portátil e instalado.
 
-## Before calling a build stable
-
-A Windows pilot build must pass:
-
-- application starts without internet;
-- first-run white-label setup persists after restart;
-- client/service/product/staff creation persists after restart;
-- appointment conflict checks work;
-- finalizing an appointment creates one Cash entry only;
-- collaborator commission snapshot remains unchanged after percentage edits;
-- product sale reduces stock and records commission when a collaborator is selected;
-- manual historical Cash entries appear in Reports;
-- backup is created and integrity-check passes;
-- restore creates a pre-restore safety backup and reloads data;
-- portable mode writes only under the portable data root;
-- installed mode writes under Windows application data.
-
-Until those checks pass on a real Windows build, artifacts are considered pilot/test builds, not a production release.
+Até esses testes passarem em Windows real, a versão é considerada build de teste.
