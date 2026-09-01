@@ -1,0 +1,26 @@
+name: Apply Source Fix v0.2.1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/apply-source-fix3-temp.yml"
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply source patch
+        run: python scripts/apply_source_fix_v021.py
+      - name: Commit source patch
+        run: |
+          rm -f TEMP_DO_NOT_USE.txt _probe_ignore.txt _probe_ignore3.txt
+          rm -f scripts/apply_audit_fix_v021.py scripts/apply_source_fix_v021.py
+          git config user.name "Yuri Cesar"
+          git config user.email "yure-c@hotmail.com"
+          git add -A
+          git commit -m "fix: corrige integridade de estoque v0.2.1"
+          git push origin HEAD:main
