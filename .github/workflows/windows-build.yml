@@ -16,27 +16,11 @@ jobs:
   build-windows:
     runs-on: windows-latest
     permissions:
-      contents: write
+      contents: read
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Apply Rust syntax fix
-        shell: pwsh
-        run: |
-          $path = "src-tauri/src/operations.rs"
-          $text = Get-Content -Raw $path
-          $text = $text.Replace('tx.execute("DELETE FROM stock_movements WHERE id=?1",params![movement_id]).map_err(|e|e.to_string())?}}if', 'tx.execute("DELETE FROM stock_movements WHERE id=?1",params![movement_id]).map_err(|e|e.to_string())?;}}if')
-          $text = $text.Replace('tx.execute("UPDATE appointments SET status=''Confirmado'',payment_method='''',cash_transaction_id=NULL WHERE id=?1",params![appointment_id]).map_err(|e|e.to_string())?}}tx', 'tx.execute("UPDATE appointments SET status=''Confirmado'',payment_method='''',cash_transaction_id=NULL WHERE id=?1",params![appointment_id]).map_err(|e|e.to_string())?;}}tx')
-          Set-Content -Path $path -Value $text -Encoding UTF8
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add $path
-          if (-not (git diff --cached --quiet)) {
-            git commit -m "fix: corrige sintaxe da exclusão de lançamentos"
-            git push origin HEAD:main
-          }
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -97,7 +81,7 @@ jobs:
           Copy-Item src-tauri/target/release/barbershop_desktop.exe artifact/portable/GestaoBarbearia.exe
           New-Item -ItemType File -Force -Path artifact/portable/portable.flag | Out-Null
           @"
-          GESTAO DA BARBEARIA - v0.2.0 TESTE
+          GESTAO DA BARBEARIA - v0.2.1 TESTE
 
           Execute GestaoBarbearia.exe nesta pasta.
           O arquivo portable.flag mantém os dados em barbershop-data ao lado do programa.
@@ -107,13 +91,13 @@ jobs:
       - name: Upload portable EXE
         uses: actions/upload-artifact@v4
         with:
-          name: GestaoBarbearia-v0.2.0-Portable
+          name: GestaoBarbearia-v0.2.1-Portable
           path: artifact/portable/
           if-no-files-found: error
 
       - name: Upload installer EXE
         uses: actions/upload-artifact@v4
         with:
-          name: GestaoBarbearia-v0.2.0-Instalador
+          name: GestaoBarbearia-v0.2.1-Instalador
           path: src-tauri/target/release/bundle/nsis/*.exe
           if-no-files-found: error
