@@ -13,7 +13,7 @@ fn create_cash_transaction(state:State<DbState>,input:CreateCashInput)->Result<C
     if desc.is_empty(){return Err("Informe a descrição do lançamento.".into())} if !valid_date(&input.date){return Err("Data inválida.".into())}
     let payment=input.payment_method.unwrap_or_default(); let sale_type=input.sale_type.unwrap_or_else(||"other".into());
     let mut c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?; operations::ensure_schema(&c)?;
-    let(staff_name,service_default,product_default)=staff_identity(&c,input.staff_id)?; let mut amount=input.amount_cents; let mut commission_percent=0; let mut commission_cents=0;
+    let(staff_name,service_default,product_default)=staff_identity(&c,input.staff_id)?; let mut amount=input.amount_cents; let mut commission_percent=0; let mut commission_cents=0; let mut stock_movement_id:Option<i64>=None;
     let tx=c.transaction().map_err(|e|e.to_string())?;
     if kind=="entrada"&&sale_type=="product"{
         let product_id=input.product_id.ok_or("Selecione o produto vendido.")?; let qty=input.quantity.unwrap_or(1).max(1);
@@ -21,13 +21,14 @@ fn create_cash_transaction(state:State<DbState>,input:CreateCashInput)->Result<C
         if stock<qty{return Err("Estoque insuficiente para esta venda.".into())} amount=price*qty; desc=format!("Venda de produto — {} x{}",product_name,qty);
         tx.execute("UPDATE products SET stock=stock-?1 WHERE id=?2",params![qty,product_id]).map_err(|e|e.to_string())?;
         tx.execute("INSERT INTO stock_movements(product_id,quantity,note,created_at) VALUES(?1,?2,?3,?4)",params![product_id,-qty,format!("Venda no caixa — {}",desc),Utc::now().to_rfc3339()]).map_err(|e|e.to_string())?;
+        stock_movement_id=Some(tx.last_insert_rowid());
         commission_percent=if input.staff_id.is_some(){product_default.clamp(0,100)}else{0}; commission_cents=amount*commission_percent/100;
     } else if kind=="entrada"&&sale_type=="service"{
         if amount<=0{return Err("Informe um valor maior que zero.".into())}
         if let Some(staff_id)=input.staff_id{commission_percent=service_commission_percent(&tx,staff_id,input.service_id,service_default)?;commission_cents=amount*commission_percent/100}
     } else if amount<=0{return Err("Informe um valor maior que zero.".into())}
     let net=if kind=="entrada"{amount-commission_cents}else{-amount};
-    tx.execute("INSERT INTO cash_transactions(kind,description,amount_cents,date,client_id,staff_id,staff_name,payment_method,source,sale_type,commission_percent,commission_cents,net_cents,settlement_id,created_at) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,'manual',?9,?10,?11,?12,NULL,?13)",params![kind,desc,amount,input.date,input.client_id,input.staff_id,staff_name,payment,sale_type,commission_percent,commission_cents,net,Utc::now().to_rfc3339()]).map_err(|e|e.to_string())?;
+    tx.execute("INSERT INTO cash_transactions(kind,description,amount_cents,date,client_id,staff_id,staff_name,payment_method,source,sale_type,commission_percent,commission_cents,net_cents,settlement_id,stock_movement_id,created_at) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,'manual',?9,?10,?11,?12,NULL,?13,?14)",params![kind,desc,amount,input.date,input.client_id,input.staff_id,staff_name,payment,sale_type,commission_percent,commission_cents,net,stock_movement_id,Utc::now().to_rfc3339()]).map_err(|e|e.to_string())?;
     let id=tx.last_insert_rowid(); tx.commit().map_err(|e|e.to_string())?;
     Ok(CashTransaction{id,kind:kind.into(),description:desc,amount_cents:amount,date:input.date,payment_method:payment,client_id:input.client_id,staff_id:input.staff_id,staff_name,source:"manual".into(),sale_type,commission_percent,commission_cents,net_cents:net})
 }

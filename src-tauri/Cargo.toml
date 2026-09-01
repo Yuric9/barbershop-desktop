@@ -1,6 +1,6 @@
 [package]
 name = "barbershop_desktop"
-version = "0.2.0"
+version = "0.2.1"
 description = "Offline white-label barbershop management"
 authors = ["Yuric9"]
 edition = "2021"
