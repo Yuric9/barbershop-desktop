@@ -1,0 +1,38 @@
+GESTÃO DA BARBEARIA — VERSÃO PORTÁTIL
+
+COMO ABRIR
+1. Extraia esta pasta inteira para um lugar onde você possa gravar arquivos
+   (Documentos, Área de Trabalho ou um pendrive). Não abra direto de dentro do .zip.
+2. Dê dois cliques em GestaoBarbearia.exe.
+
+SE APARECER "O WINDOWS PROTEGEU O COMPUTADOR"
+O programa ainda não tem certificado digital pago da Microsoft, então o Windows
+mostra esse aviso para qualquer programa novo. Para abrir:
+1. Clique em "Mais informações".
+2. Clique em "Executar assim mesmo".
+Só faça isso com arquivos baixados da página oficial:
+https://github.com/Yuric9/barbershop-desktop/releases
+Para conferir que o arquivo é o original, compare o código SHA-256 dele com o
+arquivo SHA256SUMS.txt publicado na mesma página.
+
+ONDE FICAM OS DADOS
+O arquivo portable.flag mantém tudo na pasta "barbershop-data", ao lado do programa.
+Não apague o portable.flag. Para levar o sistema para outro computador, copie a
+pasta inteira com o programa fechado.
+
+BACKUP
+O programa faz uma cópia de segurança automática por dia (guarda as 14 mais
+recentes) em barbershop-data/backups. Em Configurações > Backup você pode escolher
+outra pasta, como um pendrive ou uma pasta sincronizada com a nuvem.
+Não remova o pendrive com o programa aberto.
+
+NOVA VERSÃO
+Quando sair uma versão nova, o programa avisa no topo da tela. Na versão portátil,
+baixe o .zip novo e substitua só o GestaoBarbearia.exe — a pasta barbershop-data
+continua com os seus dados.
+
+WHATSAPP
+O botão de WhatsApp abre o WhatsApp deste computador (ou o WhatsApp Web) com a
+mensagem pronta. A senha (token) da API oficial da Meta, se usada, fica guardada
+no Cofre de Credenciais do Windows deste computador: em outro computador, cole-a
+novamente em Configurações.
