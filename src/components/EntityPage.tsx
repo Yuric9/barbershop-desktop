@@ -1,0 +1,4 @@
+import { useState } from "react";
+import type { ArchivedItem } from "../desktop-api";
+
+export function EntityPage({title,archivedKind,onLoadArchived,archived,onRestore,children}:{title:string;archivedKind:"client"|"service"|"staff"|"product";onLoadArchived:(k:any)=>Promise<void>;archived:ArchivedItem[];onRestore:(i:ArchivedItem)=>Promise<void>;children:React.ReactNode}){const [show,setShow]=useState(false);return <><div className="page-head"><h1>{title}</h1><button onClick={async()=>{const next=!show;setShow(next);if(next)await onLoadArchived(archivedKind)}}>{show?"Ocultar arquivados":"Ver arquivados"}</button></div>{children}{show&&<div className="card"><h2>Arquivados</h2>{archived.length?archived.map(i=><div className="data-row" key={`${i.kind}-${i.id}`}><b>{i.name}</b><button onClick={()=>void onRestore(i)}>Reativar</button></div>):<p className="muted">Nenhum registro arquivado.</p>}</div>}</>}
