@@ -4,33 +4,32 @@ O aplicativo desktop é compilado somente a partir deste repositório: `Yuric9/b
 
 ## GitHub Actions
 
-Workflow: `.github/workflows/windows-build.yml`
+Workflow: `.github/workflows/windows-build.yml` (Windows, Node 22, Rust stable, Vite e Tauri 2).
+O próprio workflow gera um ícone neutro de barbearia antes de compilar.
 
-A build usa `windows-latest`, Node 22, Rust stable, Vite e Tauri 2. O próprio workflow gera um ícone neutro de barbearia e cria os ícones de plataforma antes da compilação.
+| Gatilho | Resultado |
+|---|---|
+| push na `main` ou execução manual | build de teste: artefatos *Portable* e *Instalador* na aba Actions |
+| tag `v*` (ex.: `v0.3.0`) | build oficial assinado + Release público com atualização automática |
 
-Artefatos esperados para a versão 0.2.0:
-
-1. `GestaoBarbearia-v0.2.0-Portable`
-   - `GestaoBarbearia.exe`
-   - `portable.flag`
-   - `LEIA-ME.txt`
-   - na primeira execução, o aplicativo cria `barbershop-data/` ao lado do executável.
-
-2. `GestaoBarbearia-v0.2.0-Instalador`
-   - instalador NSIS do Windows (`.exe`).
+Como publicar uma versão e configurar as chaves: [docs/DISTRIBUICAO.md](docs/DISTRIBUICAO.md).
 
 ## Modo portátil
 
-A cópia portátil deve permanecer em uma pasta gravável. Quando `portable.flag` está ao lado do executável, banco, configuração e backups ficam sob `barbershop-data/` ao lado do programa.
-
-Não remova um pendrive enquanto o programa estiver aberto. Faça backup antes de formatar, substituir ou mover o dispositivo.
+Com `portable.flag` ao lado do executável, banco, configuração e backups ficam em
+`barbershop-data/` ao lado do programa. A cópia deve ficar numa pasta gravável.
+Não remova um pendrive com o programa aberto.
 
 ## Modo instalado
 
-Sem `portable.flag`, os dados graváveis ficam na pasta de dados do aplicativo do Windows resolvida pelo Tauri. Atualizar o instalador substitui os binários sem substituir automaticamente o banco `barbershop.db`.
+Sem `portable.flag`, os dados ficam na pasta de dados do aplicativo do Windows. Atualizar
+pelo instalador (ou pela atualização automática) substitui só o programa, não o banco
+`barbershop.db`.
 
 ## Validação antes de considerar estável
 
-A build deve passar por: abertura sem internet; persistência após reiniciar; criação/edição/exclusão de cadastros; conflito de Agenda; finalização da Agenda criando apenas um lançamento; lançamento manual de Serviço contando atendimento; exclusão removendo o valor dos cálculos; exclusão de produto restaurando estoque; cálculo de comissão; fechamento e reabertura de colaboradores; relatórios líquidos de comissão; backup, verificação de integridade e restauração segura; modo portátil e instalado.
-
-Até esses testes passarem em Windows real, a versão é considerada build de teste.
+Em Windows real: abertura sem internet; persistência após reiniciar; cadastros; conflito de
+Agenda; finalização criando um único lançamento; exclusão removendo valores e devolvendo
+estoque; comissão; fechamento e reabertura; backup manual e automático, restauração válida e
+inválida; WhatsApp por link e pela API (token no Cofre de Credenciais); atualização automática
+de uma versão para a seguinte; modos portátil e instalado.

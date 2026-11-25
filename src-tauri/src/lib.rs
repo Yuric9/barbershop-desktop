@@ -4,19 +4,42 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, fs, path::{Path, PathBuf}, sync::Mutex};
 use tauri::{Manager, State};
 
+mod backups;
 mod maintenance;
 mod opening_hours;
 mod operations;
 mod secrets;
+mod updates;
 
 include!("model_core.rs");
 include!("commands_base.rs");
 include!("commands_finance.rs");
 include!("commands_extra.rs");
 
+/// Backup automático: 30 s depois de abrir e depois a cada hora, verifica se o último
+/// backup tem mais de 24 h e, se tiver, cria um novo (mantendo os 14 automáticos mais recentes).
+fn start_auto_backup(handle: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(30));
+        loop {
+            let state = handle.state::<DbState>();
+            if let Ok(c) = state.connection.lock() {
+                let primary = backup_dir(&state, &c);
+                let fallback = PathBuf::from(&state.storage_root).join("backups");
+                if let Err(e) = backups::run_auto_backup(&c, &primary, &fallback, std::time::SystemTime::now()) {
+                    let log = PathBuf::from(&state.storage_root).join("logs").join("backup-automatico.log");
+                    let _ = fs::write(log, format!("{} {}\n", Local::now().format("%Y-%m-%d %H:%M"), e));
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_secs(60 * 60));
+        }
+    });
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(updates::plugin())
         .setup(|app| {
             let (root, mode) = resolve_storage_root(app).map_err(std::io::Error::other)?;
             for p in ["data", "backups", "logs", "assets", "config"] {
@@ -31,6 +54,7 @@ pub fn run() {
                 storage_mode: mode,
                 storage_root: root.display().to_string(),
             });
+            start_auto_backup(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -48,10 +72,11 @@ pub fn run() {
             archived_items, restore_archived,
             list_opening_hours_cmd, save_opening_hours_cmd,
             remarketing_clients,
-            get_whatsapp_settings, save_whatsapp_settings, send_whatsapp_text,
+            get_whatsapp_settings, save_whatsapp_settings, send_whatsapp_text, open_whatsapp_link,
             get_business_settings, save_business_settings,
             list_backups, create_backup, restore_backup,
-            maintenance_report, maintenance_diagnosis, run_maintenance_repair, write_support_report
+            maintenance_report, maintenance_diagnosis, run_maintenance_repair, write_support_report,
+            check_update, install_update, open_download_page
         ])
         .run(tauri::generate_context!())
         .expect("erro ao iniciar o aplicativo desktop");
@@ -151,5 +176,13 @@ mod tests {
         s.access_token = "EAAB-so-do-a".into();
         operations::save_whatsapp_settings(&a, s).unwrap();
         assert!(!operations::get_whatsapp_settings(&b).unwrap().has_access_token);
+    }
+
+    #[test]
+    fn link_do_whatsapp_tem_ddi_e_mensagem_codificada() {
+        let url = operations::whatsapp_link("(11) 99999-8888", "Olá, Diego! 10:00 & tudo").unwrap();
+        assert_eq!(url, "https://wa.me/5511999998888?text=Ol%C3%A1%2C%20Diego%21%2010%3A00%20%26%20tudo");
+        assert!(operations::whatsapp_link("5511999998888", "x").unwrap().starts_with("https://wa.me/5511999998888?"));
+        assert!(operations::whatsapp_link("9999-8888", "x").is_err());
     }
 }

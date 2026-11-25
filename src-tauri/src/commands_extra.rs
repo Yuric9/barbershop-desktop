@@ -48,6 +48,8 @@ fn edit_appointment_full(state:State<DbState>,input:EditAppointmentFullInput)->R
 #[tauri::command] fn remarketing_clients(state:State<DbState>,minimum_days:i64,reference_date:String)->Result<Vec<operations::RemarketingClient>,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::remarketing_clients(&c,minimum_days,&reference_date)}
 #[tauri::command] fn get_whatsapp_settings(state:State<DbState>)->Result<operations::WhatsAppSettings,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::public_whatsapp_settings(&c)}
 #[tauri::command] fn save_whatsapp_settings(state:State<DbState>,input:operations::WhatsAppSettings)->Result<operations::WhatsAppSettings,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::save_whatsapp_settings(&c,input)}
+#[tauri::command] fn open_whatsapp_link(phone:String,text:String)->Result<(),String>{operations::open_whatsapp_link(&phone,&text)}
+
 // Comando assíncrono: roda fora da thread da janela, então a tela não congela enquanto espera a Meta.
 // O cadeado do banco é solto ANTES da chamada de rede, para o resto do app continuar funcionando.
 #[tauri::command]
@@ -68,3 +70,7 @@ async fn send_whatsapp_text(state:State<'_,DbState>,client_id:Option<i64>,phone:
 #[tauri::command] fn maintenance_diagnosis(state:State<DbState>)->Result<maintenance::MaintenanceDiagnosis,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;maintenance::diagnose(&c,Path::new(&state.database_path))}
 #[tauri::command] fn run_maintenance_repair(state:State<DbState>,action:String)->Result<maintenance::RepairResult,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;let dir=PathBuf::from(&state.storage_root).join("backups");maintenance::run_safe_repair(&c,&dir,&action)}
 #[tauri::command] fn write_support_report(state:State<DbState>)->Result<String,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;let diagnosis=maintenance::diagnose(&c,Path::new(&state.database_path))?;let dir=PathBuf::from(&state.storage_root).join("logs");maintenance::write_support_report(&dir,&diagnosis,Path::new(&state.database_path),&state.storage_mode)}
+
+#[tauri::command] async fn check_update(app:tauri::AppHandle,state:State<'_,DbState>)->Result<Option<updates::UpdateInfo>,String>{updates::check(&app,state.storage_mode=="portable").await}
+#[tauri::command] async fn install_update(app:tauri::AppHandle,state:State<'_,DbState>)->Result<(),String>{updates::install(&app,state.storage_mode=="portable").await}
+#[tauri::command] fn open_download_page()->Result<(),String>{operations::open_url(operations::RELEASES_URL).map_err(|e|format!("Não foi possível abrir a página de downloads: {e}"))}

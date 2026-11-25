@@ -17,6 +17,7 @@ import type {
   StaffPerformance,
   StaffSettlement,
   WhatsAppSettings,
+  UpdateInfo,
 } from "../desktop-api";
 import { desktopApi } from "../desktop-api";
 import { localDate, monthStart, money, emptyWhatsApp } from "../lib/format";
@@ -66,6 +67,9 @@ export function useAppState() {
       "Olá, {nome}! Sentimos sua falta. Quando quiser cuidar do visual novamente, estamos à disposição.",
     ),
     [archived, setArchived] = useState<ArchivedItem[]>([]);
+
+  const [update, setUpdate] = useState<UpdateInfo | null>(null);
+  const [updating, setUpdating] = useState(false);
 
   const income = useMemo(
     () => cash.filter((i) => i.kind === "entrada").reduce((s, i) => s + i.amountCents, 0),
@@ -180,7 +184,7 @@ export function useAppState() {
       if (tab === "remarketing") await loadRemarketing();
       // Configurações mostra lista de backups, manutenção e WhatsApp: recarrega para refletir a ação
       // (ex.: o backup recém-criado aparecer na lista sem precisar trocar de aba).
-      if (tab === "configuracoes") await loadTools();
+      if (tab === "configuracoes" || tab === "status") await loadTools();
       return true;
     } catch (e) {
       setError(String(e));
@@ -188,6 +192,13 @@ export function useAppState() {
     }
   }
 
+  // Procura versão nova uma vez ao abrir. Sem internet ou sem configuração, não mostra nada.
+  useEffect(() => {
+    desktopApi
+      .checkUpdate()
+      .then(setUpdate)
+      .catch(() => {});
+  }, []);
   useEffect(() => {
     void refresh();
     void loadReport();
@@ -367,9 +378,36 @@ export function useAppState() {
   function appointmentMessage(a: Appointment) {
     return `Olá, ${a.clientName}! Seu agendamento na ${settings?.businessName || "barbearia"} foi registrado.\n\n${a.serviceNames}\n${a.date.split("-").reverse().join("/")} às ${a.time}\nProfissional: ${a.staffName}\nDuração: ${a.durationMin} min\nValor: ${money(a.totalCents)}\n\nResponda CONFIRMO para confirmar o horário.`;
   }
+  /**
+   * Botões de WhatsApp: com a API da Meta ativa, envia direto; sem ela (o padrão),
+   * abre o WhatsApp do computador com a mensagem pronta para o barbeiro conferir e enviar.
+   */
+  async function whatsAppAction(
+    clientId: number | null,
+    phone: string,
+    type: string,
+    text: string,
+    sentMessage: string,
+  ) {
+    if (whatsApp.enabled) {
+      await mutate(() => desktopApi.sendWhatsAppText(clientId, phone, type, text), sentMessage);
+      return;
+    }
+    try {
+      setError("");
+      setNotice("");
+      await desktopApi.openWhatsAppLink(phone, text);
+      setNotice("WhatsApp aberto com a mensagem pronta. Confira e envie.");
+    } catch (e) {
+      setError(String(e));
+    }
+  }
   async function sendAppointmentWhatsApp(a: Appointment) {
-    await mutate(
-      () => desktopApi.sendWhatsAppText(a.clientId, a.phone, "agendamento", appointmentMessage(a)),
+    await whatsAppAction(
+      a.clientId,
+      a.phone,
+      "agendamento",
+      appointmentMessage(a),
       "Mensagem enviada pelo WhatsApp.",
     );
   }
@@ -533,18 +571,38 @@ export function useAppState() {
     setTimeout(() => void refresh(), 0);
   }
   async function sendRemarketing(c: RemarketingClient) {
-    const text = remarketingText.replaceAll("{nome}", c.name);
-    await mutate(
-      () => desktopApi.sendWhatsAppText(c.id, c.phone, "remarketing", text),
-      `Remarketing enviado para ${c.name}.`,
-    );
+    // {nome} vira o primeiro nome, como a tela promete ("Diego Souza" → "Diego").
+    const text = remarketingText.replaceAll("{nome}", c.name.trim().split(/\s+/)[0] || c.name);
+    await whatsAppAction(c.id, c.phone, "remarketing", text, `Remarketing enviado para ${c.name}.`);
   }
   async function saveHours(rows: OpeningHour[]) {
     await mutate(() => desktopApi.saveOpeningHours(rows), "Horários de funcionamento atualizados.");
     setOpeningHours(rows);
   }
 
+  async function installUpdate() {
+    if (!update) return;
+    setError("");
+    setNotice("");
+    try {
+      if (update.portable) {
+        await desktopApi.openDownloadPage();
+        setNotice("Página de download aberta. Baixe a versão nova e substitua o programa nesta pasta.");
+        return;
+      }
+      setUpdating(true);
+      setNotice("Baixando a atualização. O app vai reiniciar sozinho quando terminar.");
+      await desktopApi.installUpdate();
+    } catch (e) {
+      setUpdating(false);
+      setError(String(e));
+    }
+  }
+
   return {
+    update,
+    updating,
+    installUpdate,
     tab,
     setTab,
     health,

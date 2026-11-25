@@ -4,7 +4,9 @@ Sistema desktop para Windows que organiza a rotina de uma barbearia — agenda, 
 
 Feito para barbearias pequenas que precisam de controle financeiro confiável sem depender de internet, mensalidade ou servidor.
 
-> **Versão atual:** `0.2.1` (build de teste — veja [Validação](#validação-antes-de-considerar-estável))
+> **Versão atual:** `0.3.0` (em teste — veja [Validação](#validação-antes-de-considerar-estável))
+>
+> **Download:** [página de versões](https://github.com/Yuric9/barbershop-desktop/releases/latest)
 
 <!-- Sugestão: adicione aqui uma captura da tela da Agenda e do Caixa.
      Ex.: ![Agenda](docs/screenshots/agenda.png) -->
@@ -37,11 +39,12 @@ Feito para barbearias pequenas que precisam de controle financeiro confiável se
 **Clientes**
 - Cadastro com telefone e data de nascimento.
 - Remarketing: lista de clientes sem visita há X dias, com total gasto.
-- Envio de mensagens pela WhatsApp Cloud API (opcional — única função que usa internet).
+- WhatsApp com a mensagem pronta: os botões abrem o WhatsApp do computador, sem cadastro na Meta. Opcionalmente, envio automático pela WhatsApp Cloud API (token guardado no Cofre de Credenciais do Windows).
 
 **Dados e manutenção**
 - Cadastros com histórico são **arquivados** em vez de excluídos, preservando relatórios antigos.
-- Backup manual, restauração com verificação de integridade e backup de segurança automático antes de restaurar.
+- Backup automático diário (guarda as 14 cópias mais recentes) e manual; aviso quando o último backup estiver antigo; restauração com verificação de integridade e cópia de segurança antes de restaurar.
+- Atualização automática pelo GitHub Releases (instalador) e aviso de versão nova (portátil).
 - Diagnóstico do banco (integridade, estoque negativo, comissões inválidas, vínculos quebrados) e reparos seguros.
 - Tema claro e escuro.
 
@@ -70,6 +73,8 @@ src/ (React)                         src-tauri/src/ (Rust)
  state/         ── estado e ações     maintenance.rs    ── diagnóstico e reparos
  desktop-api.ts ── invoke("cmd") ──▶  opening_hours.rs  ── horário de funcionamento
                                       secrets.rs        ── Cofre de Credenciais do Windows
+                                      backups.rs        ── backup manual e automático
+                                      updates.rs        ── atualização automática
                                                │
                                                ▼
                                        SQLite: barbershop.db
@@ -146,23 +151,25 @@ O schema é criado e migrado automaticamente na abertura do app (`initialize_dat
 
 ## Build e distribuição (Windows)
 
-O workflow `.github/workflows/windows-build.yml` roda em pushes na `main` (ou manualmente) e gera dois artefatos:
+O workflow `.github/workflows/windows-build.yml` gera o **instalador** (NSIS) e a versão **portátil** (`GestaoBarbearia.exe` + `portable.flag` + `LEIA-ME.txt`):
 
-1. **Portátil** — `GestaoBarbearia.exe` + `portable.flag` + `LEIA-ME.txt`.
-2. **Instalador** — instalador NSIS (`.exe`).
+- push na `main` ou execução manual → build de teste, com os arquivos na aba Actions;
+- tag `v*` (ex.: `v0.3.0`) → build oficial assinado para atualização automática e Release público.
 
-Detalhes em [BUILD_WINDOWS.md](BUILD_WINDOWS.md). Atualizar pelo instalador substitui os binários sem apagar o banco `barbershop.db`.
+Como publicar uma versão, configurar a chave de atualização e distribuir sem certificado da Microsoft: [docs/DISTRIBUICAO.md](docs/DISTRIBUICAO.md). Detalhes do build: [BUILD_WINDOWS.md](BUILD_WINDOWS.md). Atualizar substitui só o programa, sem apagar o banco `barbershop.db`.
 
 ### Validação antes de considerar estável
 
-A versão só é considerada estável após passar, em Windows real, por: abertura sem internet; persistência após reiniciar; CRUD de cadastros; conflito de Agenda; finalização criando um único lançamento; exclusão removendo valores e restaurando estoque; cálculo de comissão; fechamento e reabertura; backup, verificação de integridade e restauração; modos portátil e instalado.
+A versão só é considerada estável após passar pelo roteiro de [BUILD_WINDOWS.md](BUILD_WINDOWS.md#validação-antes-de-considerar-estável) em Windows real.
 
 ---
 
 ## Próximos passos
 
+- Teste fechado com barbearias reais.
 - Ampliar os testes automatizados (comissão, estoque e conflito de agenda).
 - Opção de backup criptografado.
+- Definir modelo de negócio e, se for pago, licença de uso.
 
 ---
 

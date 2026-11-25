@@ -1,8 +1,11 @@
 name: Windows Desktop Build
 
+# Push na main / manual: build de teste (artefatos na aba Actions).
+# Tag "v*" (ex.: v0.3.0): build oficial assinado para atualização automática + Release público.
 on:
   workflow_dispatch:
   push:
+    tags: ["v*"]
     branches: [main]
     paths:
       - "src/**"
@@ -16,7 +19,9 @@ jobs:
   build-windows:
     runs-on: windows-latest
     permissions:
-      contents: read
+      contents: write # necessário só para publicar o Release nas tags
+    env:
+      IS_RELEASE: ${{ startsWith(github.ref, 'refs/tags/v') }}
 
     steps:
       - name: Checkout
@@ -32,7 +37,16 @@ jobs:
 
       - name: Install JavaScript dependencies
         shell: pwsh
-        run: npm install
+        run: npm ci
+
+      - name: Read app version
+        shell: pwsh
+        run: |
+          $version = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          if ($env:IS_RELEASE -eq 'true' -and "${{ github.ref_name }}" -ne "v$version") {
+            throw "A tag ${{ github.ref_name }} não bate com a versão v$version do tauri.conf.json."
+          }
 
       - name: Generate neutral barbershop icon
         shell: pwsh
@@ -70,34 +84,88 @@ jobs:
         shell: pwsh
         run: cargo check --manifest-path src-tauri/Cargo.toml
 
-      - name: Build Windows installer
+      - name: Build Windows installer (teste)
+        if: env.IS_RELEASE != 'true'
         shell: pwsh
         run: npx tauri build --bundles nsis
 
-      - name: Prepare portable test build
+      # Build oficial: assina a atualização com a chave secreta e embute a chave pública no app.
+      - name: Build Windows installer (versão oficial, assinada)
+        if: env.IS_RELEASE == 'true'
+        shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          BARBERSHOP_UPDATER_PUBKEY: ${{ vars.BARBERSHOP_UPDATER_PUBKEY }}
+        run: |
+          if (-not $env:TAURI_SIGNING_PRIVATE_KEY -or -not $env:BARBERSHOP_UPDATER_PUBKEY) {
+            throw "Configure o segredo TAURI_SIGNING_PRIVATE_KEY e a variável BARBERSHOP_UPDATER_PUBKEY (veja docs/DISTRIBUICAO.md)."
+          }
+          # A configuração da versão oficial liga os artefatos de atualização e leva a chave pública.
+          @{
+            bundle = @{ createUpdaterArtifacts = $true }
+            plugins = @{ updater = @{ pubkey = $env:BARBERSHOP_UPDATER_PUBKEY.Trim() } }
+          } | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 src-tauri/tauri.release.conf.json
+          npx tauri build --bundles nsis --config src-tauri/tauri.release.conf.json
+
+      - name: Prepare portable build
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path artifact/portable | Out-Null
           Copy-Item src-tauri/target/release/barbershop_desktop.exe artifact/portable/GestaoBarbearia.exe
           New-Item -ItemType File -Force -Path artifact/portable/portable.flag | Out-Null
-          @"
-          GESTAO DA BARBEARIA - v0.2.1 TESTE
-
-          Execute GestaoBarbearia.exe nesta pasta.
-          O arquivo portable.flag mantém os dados em barbershop-data ao lado do programa.
-          Faça backup antes de mover, formatar ou substituir o dispositivo.
-          "@ | Set-Content -Encoding UTF8 artifact/portable/LEIA-ME.txt
+          Copy-Item docs/LEIA-ME.txt artifact/portable/LEIA-ME.txt
 
       - name: Upload portable EXE
+        if: env.IS_RELEASE != 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: GestaoBarbearia-v0.2.1-Portable
+          name: GestaoBarbearia-v${{ env.APP_VERSION }}-Portable
           path: artifact/portable/
           if-no-files-found: error
 
       - name: Upload installer EXE
+        if: env.IS_RELEASE != 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: GestaoBarbearia-v0.2.1-Instalador
+          name: GestaoBarbearia-v${{ env.APP_VERSION }}-Instalador
           path: src-tauri/target/release/bundle/nsis/*.exe
           if-no-files-found: error
+
+      # Nomes só com ASCII (o GitHub troca espaços e acentos nos anexos), latest.json para o
+      # app se atualizar e SHA256SUMS.txt para quem quiser conferir o download.
+      - name: Prepare release files
+        if: env.IS_RELEASE == 'true'
+        shell: pwsh
+        run: |
+          $v = $env:APP_VERSION
+          $tag = "${{ github.ref_name }}"
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          $setup = Get-ChildItem src-tauri/target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
+          $setupName = "GestaoBarbearia_${v}_x64-setup.exe"
+          Copy-Item $setup.FullName "release/$setupName"
+          $signature = (Get-Content "$($setup.FullName).sig" -Raw).Trim()
+          Compress-Archive -Path artifact/portable/* -DestinationPath "release/GestaoBarbearia_${v}_portatil.zip"
+          $latest = [ordered]@{
+            version = $v
+            notes = "Gestão da Barbearia $v"
+            pub_date = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+            platforms = @{
+              "windows-x86_64" = @{
+                signature = $signature
+                url = "https://github.com/${{ github.repository }}/releases/download/$tag/$setupName"
+              }
+            }
+          }
+          $latest | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 release/latest.json
+          Get-ChildItem release -File | Where-Object Name -ne "latest.json" | ForEach-Object {
+            "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)"
+          } | Set-Content -Encoding utf8 release/SHA256SUMS.txt
+
+      - name: Publish GitHub Release
+        if: env.IS_RELEASE == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Gestão da Barbearia ${{ github.ref_name }}
+          body_path: docs/NOTAS-DA-VERSAO.md
+          files: release/*

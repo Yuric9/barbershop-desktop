@@ -24,3 +24,8 @@ Thumbs.db
 .vscode/
 .idea/
 *.log
+
+# Chaves de assinatura das atualizações (nunca versionar)
+*.key
+*.key.pub
+src-tauri/tauri.release.conf.json
