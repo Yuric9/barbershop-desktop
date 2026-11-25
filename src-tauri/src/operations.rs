@@ -153,12 +153,20 @@ pub fn whatsapp_link(phone:&str,text:&str)->Result<String,String>{
 /// Abre um link https://wa.me no navegador/WhatsApp padrão do sistema.
 pub fn open_whatsapp_link(phone:&str,text:&str)->Result<(),String>{
  let url=whatsapp_link(phone,text)?;
+ open_url(&url).map_err(|e|format!("Não foi possível abrir o WhatsApp: {e}"))
+}
+
+/// Página de downloads das versões do app (usada pelo modo portátil para atualizar).
+pub const RELEASES_URL:&str="https://github.com/Yuric9/barbershop-desktop/releases/latest";
+
+/// Abre um endereço no navegador padrão. Só é chamado com URLs montadas pelo próprio Rust.
+pub fn open_url(url:&str)->Result<(),String>{
  #[cfg(windows)]
- let result=std::process::Command::new("rundll32").args(["url.dll,FileProtocolHandler",url.as_str()]).spawn();
+ let result=std::process::Command::new("rundll32").args(["url.dll,FileProtocolHandler",url]).spawn();
  #[cfg(target_os="macos")]
- let result=std::process::Command::new("open").arg(&url).spawn();
+ let result=std::process::Command::new("open").arg(url).spawn();
  #[cfg(all(unix,not(target_os="macos")))]
- let result=std::process::Command::new("xdg-open").arg(&url).spawn();
- result.map(|_|()).map_err(|e|format!("Não foi possível abrir o WhatsApp: {e}"))
+ let result=std::process::Command::new("xdg-open").arg(url).spawn();
+ result.map(|_|()).map_err(|e|e.to_string())
 }
 

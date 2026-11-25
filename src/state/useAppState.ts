@@ -17,6 +17,7 @@ import type {
   StaffPerformance,
   StaffSettlement,
   WhatsAppSettings,
+  UpdateInfo,
 } from "../desktop-api";
 import { desktopApi } from "../desktop-api";
 import { localDate, monthStart, money, emptyWhatsApp } from "../lib/format";
@@ -66,6 +67,9 @@ export function useAppState() {
       "Olá, {nome}! Sentimos sua falta. Quando quiser cuidar do visual novamente, estamos à disposição.",
     ),
     [archived, setArchived] = useState<ArchivedItem[]>([]);
+
+  const [update, setUpdate] = useState<UpdateInfo | null>(null);
+  const [updating, setUpdating] = useState(false);
 
   const income = useMemo(
     () => cash.filter((i) => i.kind === "entrada").reduce((s, i) => s + i.amountCents, 0),
@@ -188,6 +192,13 @@ export function useAppState() {
     }
   }
 
+  // Procura versão nova uma vez ao abrir. Sem internet ou sem configuração, não mostra nada.
+  useEffect(() => {
+    desktopApi
+      .checkUpdate()
+      .then(setUpdate)
+      .catch(() => {});
+  }, []);
   useEffect(() => {
     void refresh();
     void loadReport();
@@ -569,7 +580,29 @@ export function useAppState() {
     setOpeningHours(rows);
   }
 
+  async function installUpdate() {
+    if (!update) return;
+    setError("");
+    setNotice("");
+    try {
+      if (update.portable) {
+        await desktopApi.openDownloadPage();
+        setNotice("Página de download aberta. Baixe a versão nova e substitua o programa nesta pasta.");
+        return;
+      }
+      setUpdating(true);
+      setNotice("Baixando a atualização. O app vai reiniciar sozinho quando terminar.");
+      await desktopApi.installUpdate();
+    } catch (e) {
+      setUpdating(false);
+      setError(String(e));
+    }
+  }
+
   return {
+    update,
+    updating,
+    installUpdate,
     tab,
     setTab,
     health,

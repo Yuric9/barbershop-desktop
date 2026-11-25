@@ -39,6 +39,9 @@ export default function AppModern() {
     archived,
     refresh,
     finishAppointment,
+    update,
+    updating,
+    installUpdate,
   } = ctx;
   if (settings === null) return <main className="loading-screen">Abrindo seus dados…</main>;
   if (!settings.configured)
@@ -89,6 +92,17 @@ export default function AppModern() {
         </div>
       </aside>
       <section className="content modern-content">
+        {update && (
+          <div className="update-banner">
+            <span>
+              Nova versão {update.version} disponível.
+              {update.portable ? " Baixe e substitua o programa nesta pasta; seus dados continuam." : ""}
+            </span>
+            <button className="primary small" disabled={updating} onClick={() => void installUpdate()}>
+              {update.portable ? "Baixar versão nova" : updating ? "Atualizando…" : "Atualizar agora"}
+            </button>
+          </div>
+        )}
         {error && <div className="error">{error}</div>}
         {notice && <div className="notice">{notice}</div>}
 

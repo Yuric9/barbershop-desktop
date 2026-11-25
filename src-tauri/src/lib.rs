@@ -9,6 +9,7 @@ mod maintenance;
 mod opening_hours;
 mod operations;
 mod secrets;
+mod updates;
 
 include!("model_core.rs");
 include!("commands_base.rs");
@@ -38,6 +39,7 @@ fn start_auto_backup(handle: tauri::AppHandle) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(updates::plugin())
         .setup(|app| {
             let (root, mode) = resolve_storage_root(app).map_err(std::io::Error::other)?;
             for p in ["data", "backups", "logs", "assets", "config"] {
@@ -73,7 +75,8 @@ pub fn run() {
             get_whatsapp_settings, save_whatsapp_settings, send_whatsapp_text, open_whatsapp_link,
             get_business_settings, save_business_settings,
             list_backups, create_backup, restore_backup,
-            maintenance_report, maintenance_diagnosis, run_maintenance_repair, write_support_report
+            maintenance_report, maintenance_diagnosis, run_maintenance_repair, write_support_report,
+            check_update, install_update, open_download_page
         ])
         .run(tauri::generate_context!())
         .expect("erro ao iniciar o aplicativo desktop");

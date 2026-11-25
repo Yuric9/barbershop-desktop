@@ -230,6 +230,19 @@ h1 {
   padding: 11px 13px;
   line-height: 1.45;
 }
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 14px;
+  margin-bottom: 16px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--action);
+  background: var(--action-tint);
+  color: var(--action-text);
+  font-weight: 600;
+}
 .backup-warning {
   display: flex;
   align-items: center;

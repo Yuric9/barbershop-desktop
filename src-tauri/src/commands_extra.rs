@@ -70,3 +70,7 @@ async fn send_whatsapp_text(state:State<'_,DbState>,client_id:Option<i64>,phone:
 #[tauri::command] fn maintenance_diagnosis(state:State<DbState>)->Result<maintenance::MaintenanceDiagnosis,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;maintenance::diagnose(&c,Path::new(&state.database_path))}
 #[tauri::command] fn run_maintenance_repair(state:State<DbState>,action:String)->Result<maintenance::RepairResult,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;let dir=PathBuf::from(&state.storage_root).join("backups");maintenance::run_safe_repair(&c,&dir,&action)}
 #[tauri::command] fn write_support_report(state:State<DbState>)->Result<String,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;let diagnosis=maintenance::diagnose(&c,Path::new(&state.database_path))?;let dir=PathBuf::from(&state.storage_root).join("logs");maintenance::write_support_report(&dir,&diagnosis,Path::new(&state.database_path),&state.storage_mode)}
+
+#[tauri::command] async fn check_update(app:tauri::AppHandle,state:State<'_,DbState>)->Result<Option<updates::UpdateInfo>,String>{updates::check(&app,state.storage_mode=="portable").await}
+#[tauri::command] async fn install_update(app:tauri::AppHandle,state:State<'_,DbState>)->Result<(),String>{updates::install(&app,state.storage_mode=="portable").await}
+#[tauri::command] fn open_download_page()->Result<(),String>{operations::open_url(operations::RELEASES_URL).map_err(|e|format!("Não foi possível abrir a página de downloads: {e}"))}
