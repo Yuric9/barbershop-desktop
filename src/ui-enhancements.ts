@@ -12,7 +12,8 @@ type PendingFormSnapshot = {
   errorRevision: number;
 };
 
-const THEME_KEY = "gestao-barbearia-theme";
+// "-v2": a partir desta versão o tema claro é o padrão; a chave nova faz todos começarem no claro uma vez.
+const THEME_KEY = "gestao-barbearia-theme-v2";
 let scheduled = false;
 let errorRevision = 0;
 let lastErrorText = "";
@@ -20,9 +21,9 @@ let pendingForm: PendingFormSnapshot | null = null;
 
 function readTheme(): UiTheme {
   try {
-    return localStorage.getItem(THEME_KEY) === "light" ? "light" : "dark";
+    return localStorage.getItem(THEME_KEY) === "dark" ? "dark" : "light";
   } catch {
-    return "dark";
+    return "light";
   }
 }
 
@@ -76,7 +77,8 @@ function renderThemeControl() {
   const label = button?.querySelector<HTMLElement>(".ui-theme-label");
   if (!button || !label) return;
   const light = document.documentElement.dataset.theme === "light";
-  button.setAttribute("aria-checked", String(light));
+  // A chave fica "ligada" no tema escuro (o claro é o padrão).
+  button.setAttribute("aria-checked", String(!light));
   button.classList.toggle("is-light", light);
   label.textContent = light ? "Tema claro" : "Tema escuro";
 }
