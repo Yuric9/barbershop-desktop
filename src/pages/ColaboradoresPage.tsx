@@ -1,4 +1,5 @@
-import { money } from "../lib/format";
+import { Field } from "../components/ui";
+import { money, plural } from "../lib/format";
 import { EntityPage } from "../components/EntityPage";
 import type { AppCtx } from "../state/useAppState";
 
@@ -34,26 +35,38 @@ export function ColaboradoresPage({ ctx }: { ctx: AppCtx }) {
       onRestore={restore}
     >
       <div className="card filter compact">
-        <span className="muted">Período para cálculo/fechamento:</span>
-        <input type="date" value={settlementStart} onChange={(e) => setSettlementStart(e.target.value)} />
-        <input type="date" value={settlementEnd} onChange={(e) => setSettlementEnd(e.target.value)} />
-        <button onClick={() => void refresh()}>Atualizar período</button>
+        <Field label="Comissões a partir de">
+          <input type="date" value={settlementStart} onChange={(e) => setSettlementStart(e.target.value)} />
+        </Field>
+        <Field label="Até">
+          <input type="date" value={settlementEnd} onChange={(e) => setSettlementEnd(e.target.value)} />
+        </Field>
+        <button onClick={() => void refresh()}>Calcular período</button>
+        <small className="muted period-hint">
+          Os valores em aberto e o botão Fazer fechamento usam este período.
+        </small>
       </div>
       <form className="form card" onSubmit={addStaff}>
-        <input name="name" placeholder="Nome" required />
-        <input name="phone" placeholder="Telefone" />
-        <input name="commission" type="number" min="0" max="100" defaultValue="40" placeholder="% serviços" />
-        <input
-          name="productCommission"
-          type="number"
-          min="0"
-          max="100"
-          defaultValue="0"
-          placeholder="% produtos"
-        />
+        <Field label="Nome do colaborador">
+          <input name="name" placeholder="Ex.: Bruno" required />
+        </Field>
+        <Field label="Telefone (opcional)">
+          <input name="phone" placeholder="Ex.: (11) 98888-7777" />
+        </Field>
+        <Field label="Comissão em serviços (%)">
+          <input name="commission" type="number" min="0" max="100" defaultValue="40" />
+        </Field>
+        <Field label="Comissão em produtos (%)">
+          <input name="productCommission" type="number" min="0" max="100" defaultValue="0" />
+        </Field>
         <button className="primary">Adicionar colaborador</button>
       </form>
       <div className="card data-list">
+        {staff.length === 0 && (
+          <p className="muted empty-list">
+            Nenhum colaborador cadastrado. Cadastre quem atende para calcular as comissões.
+          </p>
+        )}
         {staff.map((s) => {
           const p = performance.find((x) => x.staffId === s.id);
           return (
@@ -68,7 +81,8 @@ export function ColaboradoresPage({ ctx }: { ctx: AppCtx }) {
                   {money(p?.commissionCents || 0)} · parte da barbearia {money(p?.netCents || 0)}
                 </small>
                 <small>
-                  {p?.serviceSales || 0} serviços · {p?.productSales || 0} vendas de produtos
+                  {plural(p?.serviceSales || 0, "serviço", "serviços")} ·{" "}
+                  {plural(p?.productSales || 0, "venda de produto", "vendas de produtos")}
                 </small>
               </div>
               <div className="row-actions">
@@ -110,7 +124,8 @@ export function ColaboradoresPage({ ctx }: { ctx: AppCtx }) {
                     barbearia {money(s.netCents)}
                   </small>
                   <small>
-                    {s.serviceSales} serviços · {s.productSales} produtos · fechado em{" "}
+                    {plural(s.serviceSales, "serviço", "serviços")} ·{" "}
+                    {plural(s.productSales, "produto", "produtos")} · fechado em{" "}
                     {new Date(s.createdAt).toLocaleString("pt-BR")}
                   </small>
                 </div>

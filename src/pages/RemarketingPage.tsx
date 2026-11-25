@@ -1,3 +1,4 @@
+import { Field } from "../components/ui";
 import { money } from "../lib/format";
 import type { AppCtx } from "../state/useAppState";
 
@@ -17,12 +18,14 @@ export function RemarketingPage({ ctx }: { ctx: AppCtx }) {
           <h1>Remarketing</h1>
           <p className="muted">Clientes sem atendimento de serviço no período selecionado.</p>
         </div>
-        <select value={remarketingDays} onChange={(e) => setRemarketingDays(Number(e.target.value))}>
-          <option value={30}>30+ dias</option>
-          <option value={45}>45+ dias</option>
-          <option value={60}>60+ dias</option>
-          <option value={90}>90+ dias</option>
-        </select>
+        <Field label="Clientes sem visita há">
+          <select value={remarketingDays} onChange={(e) => setRemarketingDays(Number(e.target.value))}>
+            <option value={30}>30 dias ou mais</option>
+            <option value={45}>45 dias ou mais</option>
+            <option value={60}>60 dias ou mais</option>
+            <option value={90}>90 dias ou mais</option>
+          </select>
+        </Field>
       </div>
       <div className="card">
         <label className="stack">

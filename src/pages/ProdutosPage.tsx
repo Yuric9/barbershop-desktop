@@ -1,3 +1,4 @@
+import { Field } from "../components/ui";
 import { desktopApi } from "../desktop-api";
 import { money } from "../lib/format";
 import { EntityPage } from "../components/EntityPage";
@@ -15,13 +16,26 @@ export function ProdutosPage({ ctx }: { ctx: AppCtx }) {
       onRestore={restore}
     >
       <form className="form card" onSubmit={addProduct}>
-        <input name="name" placeholder="Produto" required />
-        <input name="description" placeholder="Descrição" />
-        <input name="price" type="number" min="0.01" step="0.01" placeholder="Preço" required />
-        <input name="stock" type="number" min="0" step="1" defaultValue="0" />
+        <Field label="Nome do produto">
+          <input name="name" placeholder="Ex.: Pomada modeladora" required />
+        </Field>
+        <Field label="Descrição (opcional)">
+          <input name="description" placeholder="Ex.: 120 g, efeito seco" />
+        </Field>
+        <Field label="Preço de venda (R$)">
+          <input name="price" type="number" min="0.01" step="0.01" placeholder="Ex.: 45,00" required />
+        </Field>
+        <Field label="Quantidade em estoque">
+          <input name="stock" type="number" min="0" step="1" defaultValue="0" />
+        </Field>
         <button className="primary">Adicionar produto</button>
       </form>
       <div className="card data-list">
+        {products.length === 0 && (
+          <p className="muted empty-list">
+            Nenhum produto cadastrado. Preencha os campos acima e clique em Adicionar produto.
+          </p>
+        )}
         {products.map((p) => (
           <div className="data-row" key={p.id}>
             <div>
@@ -34,17 +48,27 @@ export function ProdutosPage({ ctx }: { ctx: AppCtx }) {
               <button onClick={() => setEditTarget({ kind: "product", item: p })}>Editar</button>
               <button
                 onClick={async () => {
-                  const raw = window.prompt("Ajuste de estoque (+ entrada / - saída):", "1");
-                  if (raw !== null)
-                    await mutate(
-                      () =>
-                        desktopApi.adjustStock({
-                          productId: p.id,
-                          quantity: Number(raw),
-                          note: "Ajuste manual",
-                        }),
-                      "Estoque atualizado.",
-                    );
+                  const raw = window.prompt(
+                    `Ajustar o estoque de ${p.name} (hoje: ${p.stock}).\n\n` +
+                      "Digite quantas unidades entraram (ex.: 10) ou saíram por perda/uso (ex.: -2).\n" +
+                      "Venda para cliente não é aqui: lance no Caixa como Venda de produto.",
+                    "1",
+                  );
+                  if (raw === null) return;
+                  const quantity = Number(raw.trim().replace(",", "."));
+                  if (!Number.isInteger(quantity) || quantity === 0) {
+                    window.alert("Digite um número inteiro diferente de zero, como 10 ou -2.");
+                    return;
+                  }
+                  await mutate(
+                    () =>
+                      desktopApi.adjustStock({
+                        productId: p.id,
+                        quantity,
+                        note: "Ajuste manual",
+                      }),
+                    "Estoque atualizado.",
+                  );
                 }}
               >
                 Estoque

@@ -12,26 +12,38 @@
 .cash-form > [data-cash-role="kind"] {
   order: 1;
 }
-.cash-form > [data-cash-role="service"] {
+.cash-form > [data-cash-role="saletype"] {
   order: 2;
 }
-.cash-form > [data-cash-role="amount"] {
+.cash-form > [data-cash-role="service"] {
   order: 3;
 }
-.cash-form > [data-cash-role="client"] {
+.cash-form > [data-cash-role="product"] {
+  order: 3;
+}
+.cash-form > [data-cash-role="quantity"] {
   order: 4;
 }
-.cash-form > [data-cash-role="date"] {
+.cash-form > [data-cash-role="description"] {
+  order: 4;
+}
+.cash-form > [data-cash-role="amount"] {
   order: 5;
 }
-.cash-form > [data-cash-role="payment"] {
+.cash-form > [data-cash-role="client"] {
   order: 6;
 }
-.cash-form > [data-cash-role="staff"] {
+.cash-form > [data-cash-role="date"] {
   order: 7;
 }
-.cash-form > [data-cash-role="submit"] {
+.cash-form > [data-cash-role="payment"] {
   order: 8;
+}
+.cash-form > [data-cash-role="staff"] {
+  order: 9;
+}
+.cash-form > [data-cash-role="submit"] {
+  order: 10;
   min-height: 42px;
 }
 

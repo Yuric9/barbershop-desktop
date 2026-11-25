@@ -39,3 +39,6 @@ export const daysSince = (value: string) => {
   if (Number.isNaN(t)) return null;
   return Math.floor((Date.now() - t) / 86_400_000);
 };
+
+/** "1 serviço", "2 serviços", "0 serviços". */
+export const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
