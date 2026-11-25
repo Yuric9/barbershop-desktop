@@ -48,17 +48,27 @@ export function ProdutosPage({ ctx }: { ctx: AppCtx }) {
               <button onClick={() => setEditTarget({ kind: "product", item: p })}>Editar</button>
               <button
                 onClick={async () => {
-                  const raw = window.prompt("Ajuste de estoque (+ entrada / - saída):", "1");
-                  if (raw !== null)
-                    await mutate(
-                      () =>
-                        desktopApi.adjustStock({
-                          productId: p.id,
-                          quantity: Number(raw),
-                          note: "Ajuste manual",
-                        }),
-                      "Estoque atualizado.",
-                    );
+                  const raw = window.prompt(
+                    `Ajustar o estoque de ${p.name} (hoje: ${p.stock}).\n\n` +
+                      "Digite quantas unidades entraram (ex.: 10) ou saíram por perda/uso (ex.: -2).\n" +
+                      "Venda para cliente não é aqui: lance no Caixa como Venda de produto.",
+                    "1",
+                  );
+                  if (raw === null) return;
+                  const quantity = Number(raw.trim().replace(",", "."));
+                  if (!Number.isInteger(quantity) || quantity === 0) {
+                    window.alert("Digite um número inteiro diferente de zero, como 10 ou -2.");
+                    return;
+                  }
+                  await mutate(
+                    () =>
+                      desktopApi.adjustStock({
+                        productId: p.id,
+                        quantity,
+                        note: "Ajuste manual",
+                      }),
+                    "Estoque atualizado.",
+                  );
                 }}
               >
                 Estoque

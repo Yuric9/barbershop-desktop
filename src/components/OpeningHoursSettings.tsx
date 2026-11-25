@@ -53,17 +53,35 @@ export function OpeningHoursSettings({
   return (
     <form className="opening-hours" onSubmit={submit}>
       <p className="muted">
-        A Agenda deve usar estes horários para calcular os slots disponíveis. Dias desmarcados ficam fechados.
+        A Agenda usa estes horários para mostrar os horários livres. Marque os dias em que a barbearia abre;
+        dias desmarcados ficam fechados.
       </p>
+      <div className="opening-hour-row opening-hour-head" aria-hidden="true">
+        <span>Dia (marque se abre)</span>
+        <span>Abre às</span>
+        {/* mesma largura da palavra "até" das linhas, para as colunas alinharem */}
+        <span className="invisible">até</span>
+        <span>Fecha às</span>
+      </div>
       {normalized.map((row) => (
         <div className="opening-hour-row" key={row.dayOfWeek}>
           <label className="day-toggle">
             <input name={`enabled-${row.dayOfWeek}`} type="checkbox" defaultChecked={row.enabled} />
             <span>{labels[row.dayOfWeek]}</span>
           </label>
-          <input name={`start-${row.dayOfWeek}`} type="time" defaultValue={row.startTime} />
+          <input
+            name={`start-${row.dayOfWeek}`}
+            type="time"
+            defaultValue={row.startTime}
+            aria-label={`${labels[row.dayOfWeek]}: abre às`}
+          />
           <span>até</span>
-          <input name={`end-${row.dayOfWeek}`} type="time" defaultValue={row.endTime} />
+          <input
+            name={`end-${row.dayOfWeek}`}
+            type="time"
+            defaultValue={row.endTime}
+            aria-label={`${labels[row.dayOfWeek]}: fecha às`}
+          />
         </div>
       ))}
       <button>Salvar horários de funcionamento</button>

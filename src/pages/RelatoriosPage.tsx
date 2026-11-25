@@ -1,5 +1,5 @@
 import { money, months } from "../lib/format";
-import { Kpi } from "../components/ui";
+import { Kpi, Field } from "../components/ui";
 import type { AppCtx } from "../state/useAppState";
 
 export function RelatoriosPage({ ctx }: { ctx: AppCtx }) {
@@ -12,13 +12,15 @@ export function RelatoriosPage({ ctx }: { ctx: AppCtx }) {
           <p className="muted">Resultado mês a mês. O saldo já desconta despesas e comissões.</p>
         </div>
         <div className="filter">
-          <input
-            type="number"
-            min="2000"
-            max="2100"
-            value={reportYear}
-            onChange={(e) => setReportYear(Number(e.target.value))}
-          />
+          <Field label="Ano">
+            <input
+              type="number"
+              min="2000"
+              max="2100"
+              value={reportYear}
+              onChange={(e) => setReportYear(Number(e.target.value))}
+            />
+          </Field>
           <button onClick={() => void loadReport()}>Atualizar</button>
         </div>
       </div>

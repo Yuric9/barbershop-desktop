@@ -33,12 +33,14 @@ export function AgendaPage({ ctx }: { ctx: AppCtx }) {
           <h1>Agenda</h1>
           <p className="muted">Os horários livres seguem o funcionamento definido em Configurações.</p>
         </div>
-        <input
-          className="date-field"
-          type="date"
-          value={agendaDate}
-          onChange={(e) => setAgendaDate(e.target.value)}
-        />
+        <Field label="Dia mostrado na agenda">
+          <input
+            className="date-field"
+            type="date"
+            value={agendaDate}
+            onChange={(e) => setAgendaDate(e.target.value)}
+          />
+        </Field>
       </div>
       <div className="agenda-layout modern-agenda">
         <form className="card appointment-form" onSubmit={addAppointment}>

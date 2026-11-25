@@ -382,7 +382,7 @@ h1 {
 .settings-form select,
 .drawer select,
 .card > select,
-.page-head > select {
+.page-head select {
   appearance: none;
   -webkit-appearance: none;
   background-image: var(--select-arrow);
@@ -390,7 +390,7 @@ h1 {
   background-position: right 12px center;
   padding-right: 34px;
 }
-.page-head > select {
+.page-head select {
   background-color: var(--field);
   color: var(--ink);
   border: 1px solid var(--line-strong);
@@ -444,6 +444,16 @@ input[type="radio"] {
 }
 .filter .field input {
   width: auto;
+}
+.opening-hour-head {
+  border-top: 0 !important;
+  padding-top: 0 !important;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--ink-faint);
+}
+.invisible {
+  visibility: hidden;
 }
 .period-hint {
   flex-basis: 100%;
