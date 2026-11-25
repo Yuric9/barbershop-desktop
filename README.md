@@ -64,11 +64,12 @@ Feito para barbearias pequenas que precisam de controle financeiro confiável se
 
 ```
 src/ (React)                         src-tauri/src/ (Rust)
- AppModern.tsx  ── telas              lib.rs            ── inicialização e registro dos comandos
- desktop-api.ts ── invoke("cmd") ──▶  commands_*.rs     ── regras de agenda, caixa, estoque, backup
-                                      operations.rs     ── edição, exclusão segura, fechamentos, WhatsApp
-                                      maintenance.rs    ── diagnóstico e reparos
-                                      opening_hours.rs  ── horário de funcionamento
+ AppModern.tsx  ── menu e navegação   lib.rs            ── inicialização, registro dos comandos e testes
+ pages/         ── uma tela por aba   commands_*.rs     ── regras de agenda, caixa, estoque, backup
+ components/    ── peças reutilizáveis operations.rs    ── edição, exclusão segura, fechamentos, WhatsApp
+ state/         ── estado e ações     maintenance.rs    ── diagnóstico e reparos
+ desktop-api.ts ── invoke("cmd") ──▶  opening_hours.rs  ── horário de funcionamento
+                                      secrets.rs        ── Cofre de Credenciais do Windows
                                                │
                                                ▼
                                        SQLite: barbershop.db
@@ -106,7 +107,14 @@ Dentro da pasta: `data/barbershop.db`, `backups/`, `logs/`, `assets/` e `config/
    ```bash
    npm run tauri:dev
    ```
-4. Para gerar o instalador localmente:
+4. Testes do backend e formatação do código:
+   ```bash
+   cd src-tauri && cargo test
+   ```
+   ```bash
+   npm run format
+   ```
+5. Para gerar o instalador localmente:
    ```bash
    npm run tauri:build
    ```
@@ -115,7 +123,7 @@ Dentro da pasta: `data/barbershop.db`, `backups/`, `logs/`, `assets/` e `config/
 
 ### Variáveis de ambiente
 
-O projeto **não usa variáveis de ambiente**. As configurações (dados da barbearia, destino do backup, credenciais da WhatsApp Cloud API) são feitas pela tela **Configurações** do app e ficam no banco local.
+O projeto **não usa variáveis de ambiente**. As configurações (dados da barbearia, destino do backup, WhatsApp Cloud API) são feitas pela tela **Configurações** do app e ficam no banco local — exceto o **Access Token do WhatsApp**, que fica no **Cofre de Credenciais do Windows** e nunca vai para o banco nem para os backups.
 
 ---
 
@@ -153,9 +161,7 @@ A versão só é considerada estável após passar, em Windows real, por: abertu
 
 ## Próximos passos
 
-- Guardar o token do WhatsApp no Cofre de Credenciais do Windows em vez do banco.
-- Testes automatizados das regras de comissão, estoque e conflito de agenda.
-- Dividir `AppModern.tsx` em uma página por módulo.
+- Ampliar os testes automatizados (comissão, estoque e conflito de agenda).
 - Opção de backup criptografado.
 
 ---

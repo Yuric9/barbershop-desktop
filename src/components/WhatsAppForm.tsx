@@ -53,6 +53,10 @@ export function WhatsAppForm({
             value.hasAccessToken ? "Token salvo — deixe em branco para manter" : "Cole o Access Token aqui"
           }
         />
+        <small className="muted">
+          Guardado no Cofre de Credenciais do Windows deste computador — não vai para o banco nem para os
+          backups. Em outro computador (ou no pendrive em outra máquina), cole o token novamente.
+        </small>
       </label>
       <label>
         Links/redes usados no cadastro

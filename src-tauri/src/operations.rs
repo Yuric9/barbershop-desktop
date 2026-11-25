@@ -18,6 +18,8 @@ pub fn ensure_schema(c:&Connection)->Result<(),String>{
  let _=c.execute("ALTER TABLE cash_transactions ADD COLUMN settlement_id INTEGER",[]);
  let _=c.execute("ALTER TABLE cash_transactions ADD COLUMN stock_movement_id INTEGER",[]);
  c.execute_batch("CREATE TABLE IF NOT EXISTS whatsapp_settings(id INTEGER PRIMARY KEY CHECK(id=1),enabled INTEGER NOT NULL DEFAULT 0,api_base_url TEXT NOT NULL DEFAULT 'https://graph.facebook.com',api_version TEXT NOT NULL DEFAULT 'v23.0',phone_number_id TEXT NOT NULL DEFAULT '',access_token TEXT NOT NULL DEFAULT '',social_links_text TEXT NOT NULL DEFAULT '',updated_at TEXT NOT NULL DEFAULT ''); INSERT OR IGNORE INTO whatsapp_settings(id) VALUES(1); CREATE TABLE IF NOT EXISTS whatsapp_messages(id INTEGER PRIMARY KEY AUTOINCREMENT,client_id INTEGER,phone TEXT NOT NULL,message_type TEXT NOT NULL,message_text TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',provider_message_id TEXT NOT NULL DEFAULT '',error_text TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL,sent_at TEXT NOT NULL DEFAULT '',FOREIGN KEY(client_id) REFERENCES clients(id)); CREATE INDEX IF NOT EXISTS idx_whatsapp_messages_client ON whatsapp_messages(client_id,created_at); CREATE TABLE IF NOT EXISTS staff_settlements(id INTEGER PRIMARY KEY AUTOINCREMENT,staff_id INTEGER NOT NULL,staff_name TEXT NOT NULL,start_date TEXT NOT NULL,end_date TEXT NOT NULL,gross_cents INTEGER NOT NULL,commission_cents INTEGER NOT NULL,net_cents INTEGER NOT NULL,service_sales INTEGER NOT NULL DEFAULT 0,product_sales INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL,FOREIGN KEY(staff_id) REFERENCES staff(id)); CREATE INDEX IF NOT EXISTS idx_staff_settlements_staff ON staff_settlements(staff_id,created_at); CREATE INDEX IF NOT EXISTS idx_cash_settlement ON cash_transactions(settlement_id);").map_err(|e|e.to_string())?;
+ // token_ref: nome do segredo no Cofre de Credenciais. A coluna access_token fica sempre vazia (legado).
+ let _=c.execute("ALTER TABLE whatsapp_settings ADD COLUMN token_ref TEXT NOT NULL DEFAULT ''",[]);
  Ok(())
 }
 fn digits(v:&str)->String{v.chars().filter(|c|c.is_ascii_digit()).collect()}
@@ -62,8 +64,34 @@ pub fn remarketing_clients(c:&Connection,minimum_days:i64,reference_date:&str)->
 /// Endereço oficial da WhatsApp Cloud API. O token só é enviado para cá.
 pub const WHATSAPP_API_BASE:&str="https://graph.facebook.com";
 
+/// Nome do segredo deste banco no Cofre de Credenciais. É criado na primeira vez.
+/// Cada banco (instalado ou cópia portátil) tem o seu, para duas cópias no mesmo PC não se misturarem.
+fn token_ref(c:&Connection)->Result<String,String>{
+ let current:String=c.query_row("SELECT token_ref FROM whatsapp_settings WHERE id=1",[],|r|r.get(0)).map_err(|e|e.to_string())?;
+ if !current.trim().is_empty(){return Ok(current)}
+ let created=format!("whatsapp-token-{}",Utc::now().timestamp_nanos_opt().unwrap_or_default());
+ c.execute("UPDATE whatsapp_settings SET token_ref=?1 WHERE id=1",params![created]).map_err(|e|e.to_string())?;
+ Ok(created)
+}
+
 /// Leitura interna, COM o token. Use apenas no backend (envio de mensagens).
-pub fn get_whatsapp_settings(c:&Connection)->Result<WhatsAppSettings,String>{ensure_schema(c)?;c.query_row("SELECT enabled,api_base_url,api_version,phone_number_id,access_token,social_links_text FROM whatsapp_settings WHERE id=1",[],|r|{let token:String=r.get(4)?;Ok(WhatsAppSettings{enabled:r.get::<_,i64>(0)?!=0,api_base_url:r.get(1)?,api_version:r.get(2)?,phone_number_id:r.get(3)?,has_access_token:!token.trim().is_empty(),access_token:token,social_links_text:r.get(5)?})}).map_err(|e|e.to_string())}
+/// O token vem do Cofre de Credenciais. Se ainda houver um token antigo gravado no banco,
+/// ele é movido para o cofre e apagado do banco (migração automática, uma vez só).
+pub fn get_whatsapp_settings(c:&Connection)->Result<WhatsAppSettings,String>{
+ ensure_schema(c)?;
+ let (enabled,api_base_url,api_version,phone_number_id,legacy_token,social_links_text):(i64,String,String,String,String,String)=c.query_row("SELECT enabled,api_base_url,api_version,phone_number_id,access_token,social_links_text FROM whatsapp_settings WHERE id=1",[],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?))).map_err(|e|e.to_string())?;
+ let reference=token_ref(c)?;
+ let token=if !legacy_token.trim().is_empty(){
+  // Só apaga do banco DEPOIS de gravar no cofre com sucesso; se o cofre falhar, o token continua funcionando.
+  if crate::secrets::set(&reference,legacy_token.trim()).is_ok(){
+   c.execute("UPDATE whatsapp_settings SET access_token='' WHERE id=1",[]).map_err(|e|e.to_string())?;
+  }
+  legacy_token.trim().to_string()
+ }else{
+  crate::secrets::get(&reference)?.unwrap_or_default()
+ };
+ Ok(WhatsAppSettings{enabled:enabled!=0,api_base_url,api_version,phone_number_id,has_access_token:!token.is_empty(),access_token:token,social_links_text})
+}
 
 /// Versão para a tela: o token nunca sai do backend, só a informação "configurado ou não".
 pub fn public_whatsapp_settings(c:&Connection)->Result<WhatsAppSettings,String>{let mut s=get_whatsapp_settings(c)?;s.access_token=String::new();Ok(s)}
@@ -80,7 +108,8 @@ pub fn save_whatsapp_settings(c:&Connection,s:WhatsAppSettings)->Result<WhatsApp
  if !phone_id.chars().all(|c|c.is_ascii_digit()){return Err("O Phone Number ID deve conter apenas números.".into())}
  // Token em branco = manter o que já está salvo (a tela não recebe mais o token atual).
  let token=s.access_token.trim();
- c.execute("UPDATE whatsapp_settings SET enabled=?1,api_base_url=?2,api_version=?3,phone_number_id=?4,access_token=CASE WHEN ?5='' THEN access_token ELSE ?5 END,social_links_text=?6,updated_at=?7 WHERE id=1",params![if s.enabled{1}else{0},WHATSAPP_API_BASE,version,phone_id,token,s.social_links_text,Utc::now().to_rfc3339()]).map_err(|e|e.to_string())?;
+ if !token.is_empty(){crate::secrets::set(&token_ref(c)?,token)?;}
+ c.execute("UPDATE whatsapp_settings SET enabled=?1,api_base_url=?2,api_version=?3,phone_number_id=?4,social_links_text=?5,updated_at=?6 WHERE id=1",params![if s.enabled{1}else{0},WHATSAPP_API_BASE,version,phone_id,s.social_links_text,Utc::now().to_rfc3339()]).map_err(|e|e.to_string())?;
  public_whatsapp_settings(c)
 }
 
