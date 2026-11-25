@@ -126,7 +126,10 @@ fn create_appointment(state:State<DbState>,input:CreateAppointmentInput)->Result
 fn update_appointment(state:State<DbState>,input:UpdateAppointmentInput)->Result<(),String>{
     let mut c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;
     if !["Pendente","Confirmado","Finalizado","Cancelado"].contains(&input.status.as_str()){return Err("Status inválido.".into())}
-    let cur=c.query_row("SELECT client_id,client_name,staff_id,service_names,total_cents,date,cash_transaction_id FROM appointments WHERE id=?1",params![input.id],|r|Ok((r.get::<_,Option<i64>>(0)?,r.get::<_,String>(1)?,r.get::<_,Option<i64>>(2)?,r.get::<_,String>(3)?,r.get::<_,i64>(4)?,r.get::<_,String>(5)?,r.get::<_,Option<i64>>(6)?))).map_err(|_|"Agendamento não encontrado".to_string())?;
+    let cur=c.query_row("SELECT client_id,client_name,staff_id,service_names,total_cents,date,cash_transaction_id,status FROM appointments WHERE id=?1",params![input.id],|r|Ok((r.get::<_,Option<i64>>(0)?,r.get::<_,String>(1)?,r.get::<_,Option<i64>>(2)?,r.get::<_,String>(3)?,r.get::<_,i64>(4)?,r.get::<_,String>(5)?,r.get::<_,Option<i64>>(6)?,r.get::<_,String>(7)?))).map_err(|_|"Agendamento não encontrado".to_string())?;
+    // Regra de negócio no backend (não só na tela): atendimento finalizado ou cancelado não muda de status.
+    // Para corrigir um finalizado, exclua o lançamento no Caixa — isso reabre o agendamento.
+    if cur.7=="Finalizado"||cur.7=="Cancelado"{return Err(format!("Este agendamento já está {}. Para corrigir, exclua o lançamento no Caixa ou crie um novo agendamento.",cur.7.to_lowercase()))}
     let payment=input.payment_method.unwrap_or_default(); let note=input.note.unwrap_or_default(); let mut commission_percent=0; let mut commission_cents=0; let mut staff_name=String::new();
     if let Some(staff_id)=cur.2{let(identity,default_percent,_)=staff_identity(&c,Some(staff_id))?;staff_name=identity;let calc=appointment_commission(&c,input.id,staff_id,default_percent)?;commission_percent=calc.0;commission_cents=calc.1}
     let tx=c.transaction().map_err(|e|e.to_string())?; let mut cash_id=cur.6;

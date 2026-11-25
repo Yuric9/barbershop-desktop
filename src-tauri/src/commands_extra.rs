@@ -46,9 +46,24 @@ fn edit_appointment_full(state:State<DbState>,input:EditAppointmentFullInput)->R
 #[tauri::command] fn reopen_staff_settlement(state:State<DbState>,id:i64)->Result<(),String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::reopen_staff_settlement(&c,id)}
 
 #[tauri::command] fn remarketing_clients(state:State<DbState>,minimum_days:i64,reference_date:String)->Result<Vec<operations::RemarketingClient>,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::remarketing_clients(&c,minimum_days,&reference_date)}
-#[tauri::command] fn get_whatsapp_settings(state:State<DbState>)->Result<operations::WhatsAppSettings,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::get_whatsapp_settings(&c)}
+#[tauri::command] fn get_whatsapp_settings(state:State<DbState>)->Result<operations::WhatsAppSettings,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::public_whatsapp_settings(&c)}
 #[tauri::command] fn save_whatsapp_settings(state:State<DbState>,input:operations::WhatsAppSettings)->Result<operations::WhatsAppSettings,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::save_whatsapp_settings(&c,input)}
-#[tauri::command] fn send_whatsapp_text(state:State<DbState>,client_id:Option<i64>,phone:String,message_type:String,text:String)->Result<operations::WhatsAppSendResult,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::send_whatsapp_text(&c,client_id,phone,message_type,text)}
+// Comando assíncrono: roda fora da thread da janela, então a tela não congela enquanto espera a Meta.
+// O cadeado do banco é solto ANTES da chamada de rede, para o resto do app continuar funcionando.
+#[tauri::command]
+async fn send_whatsapp_text(state:State<'_,DbState>,client_id:Option<i64>,phone:String,message_type:String,text:String)->Result<operations::WhatsAppSendResult,String>{
+    let prepared={let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::prepare_whatsapp_send(&c,client_id,&phone,&message_type,&text)?};
+    let outcome=async{
+        let client=reqwest::Client::builder().timeout(std::time::Duration::from_secs(15)).build().map_err(|e|e.to_string())?;
+        let resp=client.post(&prepared.url).bearer_auth(&prepared.token).json(&prepared.payload).send().await.map_err(|e|format!("Falha de conexão com WhatsApp API: {}",e))?;
+        let status=resp.status();
+        let body:serde_json::Value=resp.json().await.unwrap_or_else(|_|serde_json::json!({}));
+        if status.is_success(){Ok(body.get("messages").and_then(|v|v.get(0)).and_then(|v|v.get("id")).and_then(|v|v.as_str()).unwrap_or("").to_string())}
+        else{Err(format!("WhatsApp API recusou o envio ({}): {}",status,body))}
+    }.await;
+    let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;
+    operations::finish_whatsapp_send(&c,prepared.log_id,outcome)
+}
 
 #[tauri::command] fn maintenance_diagnosis(state:State<DbState>)->Result<maintenance::MaintenanceDiagnosis,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;maintenance::diagnose(&c,Path::new(&state.database_path))}
 #[tauri::command] fn run_maintenance_repair(state:State<DbState>,action:String)->Result<maintenance::RepairResult,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;let dir=PathBuf::from(&state.storage_root).join("backups");maintenance::run_safe_repair(&c,&dir,&action)}

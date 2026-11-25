@@ -23,7 +23,9 @@ export type RepairResult = { action:string; success:boolean; message:string; saf
 export type OpeningHour = { dayOfWeek:number; startTime:string; endTime:string; enabled:boolean };
 export type RemarketingClient = { id:number; name:string; phone:string; lastVisit:string; daysWithoutVisit:number; totalSpentCents:number; visits:number };
 export type ArchivedItem = { id:number; name:string; kind:"client"|"service"|"staff"|"product"|string };
-export type WhatsAppSettings = { enabled:boolean; apiBaseUrl:string; apiVersion:string; phoneNumberId:string; accessToken:string; socialLinksText:string };
+// accessToken vem sempre vazio do backend (o token não sai do Rust); hasAccessToken diz se há um salvo.
+// Ao salvar, accessToken vazio = manter o token atual.
+export type WhatsAppSettings = { enabled:boolean; apiBaseUrl:string; apiVersion:string; phoneNumberId:string; accessToken:string; socialLinksText:string; hasAccessToken?:boolean };
 export type WhatsAppSendResult = { success:boolean; providerMessageId:string; status:string };
 
 export const desktopApi = {
