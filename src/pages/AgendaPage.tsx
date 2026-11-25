@@ -30,10 +30,7 @@ export function AgendaPage({ ctx }: { ctx: AppCtx }) {
       <div className="page-head">
         <div>
           <h1>Agenda</h1>
-          <p className="muted">
-            Os horários vêm de Configurações. Se um serviço ultrapassar o fechamento, o sistema avisa sem
-            impedir sua decisão.
-          </p>
+          <p className="muted">Os horários livres seguem o funcionamento definido em Configurações.</p>
         </div>
         <input
           className="date-field"
@@ -58,7 +55,7 @@ export function AgendaPage({ ctx }: { ctx: AppCtx }) {
             <input name="phone" placeholder="Telefone" />
           </div>
           <select name="staffId">
-            <option value="">Sem colaborador definido</option>
+            <option value="">Sem colaborador</option>
             {staff.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}

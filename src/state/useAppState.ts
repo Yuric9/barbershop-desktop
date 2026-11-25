@@ -230,7 +230,7 @@ export function useAppState() {
         phone: String(f.get("phone") || ""),
         birthDate: String(f.get("birthDate") || ""),
       });
-      setNotice("Cliente cadastrado.");
+      setNotice("Cliente adicionado.");
       form.reset();
       await refresh();
       if (whatsApp.enabled) {
@@ -253,7 +253,7 @@ export function useAppState() {
             priceCents: Math.round(Number(f.get("price")) * 100),
             durationMin: Number(f.get("durationMin") || 30),
           }),
-        "Serviço cadastrado.",
+        "Serviço adicionado.",
       )
     )
       form.reset();
@@ -271,7 +271,7 @@ export function useAppState() {
             commissionPercent: Number(f.get("commission") || 0),
             productCommissionPercent: Number(f.get("productCommission") || 0),
           }),
-        "Colaborador cadastrado.",
+        "Colaborador adicionado.",
       )
     )
       form.reset();
@@ -289,7 +289,7 @@ export function useAppState() {
             priceCents: Math.round(Number(f.get("price")) * 100),
             stock: Number(f.get("stock") || 0),
           }),
-        "Produto cadastrado.",
+        "Produto adicionado.",
       )
     )
       form.reset();
@@ -471,7 +471,11 @@ export function useAppState() {
     await loadArchived(kind);
   }
   async function remove(kind: "client" | "service" | "staff" | "product", id: number) {
-    if (!window.confirm("Excluir definitivamente? O sistema bloqueará se houver histórico vinculado."))
+    if (
+      !window.confirm(
+        "Excluir para sempre? Se houver atendimentos ou lançamentos ligados a este registro, a exclusão é bloqueada; use Arquivar.",
+      )
+    )
       return;
     const fn =
       kind === "client"

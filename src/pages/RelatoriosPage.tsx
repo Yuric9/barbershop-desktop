@@ -9,10 +9,7 @@ export function RelatoriosPage({ ctx }: { ctx: AppCtx }) {
       <div className="page-head">
         <div>
           <h1>Relatórios</h1>
-          <p className="muted">
-            Serviços lançados diretamente no Caixa também entram como atendimentos. O saldo desconta despesas
-            e comissões.
-          </p>
+          <p className="muted">Resultado mês a mês. O saldo já desconta despesas e comissões.</p>
         </div>
         <div className="filter">
           <input
@@ -22,7 +19,7 @@ export function RelatoriosPage({ ctx }: { ctx: AppCtx }) {
             value={reportYear}
             onChange={(e) => setReportYear(Number(e.target.value))}
           />
-          <button onClick={() => void loadReport()}>Carregar</button>
+          <button onClick={() => void loadReport()}>Atualizar</button>
         </div>
       </div>
       {report && (

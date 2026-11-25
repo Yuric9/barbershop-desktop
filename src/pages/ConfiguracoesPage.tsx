@@ -67,7 +67,11 @@ export function ConfiguracoesPage({ ctx }: { ctx: AppCtx }) {
                 </div>
                 <button
                   onClick={() => {
-                    if (window.confirm("Restaurar este backup?"))
+                    if (
+                      window.confirm(
+                        "Restaurar este backup? Os dados atuais serão substituídos pelos do backup. Antes disso, o app guarda uma cópia de segurança.",
+                      )
+                    )
                       void mutate(() => desktopApi.restoreBackup(b.path), "Backup restaurado.");
                   }}
                 >
@@ -82,13 +86,13 @@ export function ConfiguracoesPage({ ctx }: { ctx: AppCtx }) {
           {maintenance && (
             <div className="diagnostics">
               <Metric label="Integridade" value={maintenance.integrity} />
-              <Metric label="Schema" value={String(maintenance.schemaVersion)} />
+              <Metric label="Versão dos dados" value={String(maintenance.schemaVersion)} />
               <Metric
                 label="Tamanho"
                 value={`${(maintenance.databaseSizeBytes / 1024 / 1024).toFixed(2)} MB`}
               />
               <div className="wide">
-                <small>Banco local</small>
+                <small>Arquivo de dados</small>
                 <code>{maintenance.databasePath}</code>
               </div>
             </div>

@@ -120,7 +120,7 @@ function enhanceCash() {
   if (client) client.title = "Cliente";
   if (date) date.title = "Data do lançamento";
   if (payment) payment.title = "Forma de pagamento";
-  if (staff) staff.title = "Colaborador ou administrador";
+  if (staff) staff.title = "Colaborador";
 
   markCashField(kind, "kind");
   markCashField(service, "service");
@@ -136,16 +136,6 @@ function enhanceCash() {
     service.addEventListener("change", () => {
       requestAnimationFrame(() => enhanceCash());
     });
-  }
-
-  let note = form.querySelector<HTMLElement>("[data-cash-reset-note]");
-  if (!note) {
-    note = document.createElement("div");
-    note.className = "cash-reset-note";
-    note.dataset.cashResetNote = "true";
-    note.textContent =
-      "Após salvar, os campos do lançamento são limpos automaticamente para o próximo registro.";
-    form.append(note);
   }
 
   const kpis = document.querySelectorAll<HTMLElement>(".modern-content .kpi-grid .kpi");

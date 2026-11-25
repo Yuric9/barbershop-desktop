@@ -57,7 +57,7 @@ export function StatusPage({ ctx }: { ctx: AppCtx }) {
               />
             ))
           ) : (
-            <p className="muted">Nenhum atendimento.</p>
+            <p className="muted">Nenhum atendimento hoje. Use + Novo agendamento para marcar.</p>
           )}
         </div>
         <div className="card">

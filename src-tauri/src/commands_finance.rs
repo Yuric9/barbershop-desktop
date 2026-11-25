@@ -1,6 +1,6 @@
 #[tauri::command]
 fn list_cash_transactions(state:State<DbState>,start:Option<String>,end:Option<String>)->Result<Vec<CashTransaction>,String>{
-    let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?; operations::ensure_schema(&c)?;
+    let c=state.connection.lock().map_err(|_|BUSY.to_string())?; operations::ensure_schema(&c)?;
     let a=start.unwrap_or_else(||"0000-01-01".into()); let b=end.unwrap_or_else(||"9999-12-31".into());
     let mut s=c.prepare("SELECT id,kind,description,amount_cents,date,payment_method,client_id,staff_id,staff_name,source,sale_type,commission_percent,commission_cents,net_cents FROM cash_transactions WHERE date BETWEEN ?1 AND ?2 ORDER BY date DESC,id DESC LIMIT 2000").map_err(|e|e.to_string())?;
     let rows=s.query_map(params![a,b],|r|Ok(CashTransaction{id:r.get(0)?,kind:r.get(1)?,description:r.get(2)?,amount_cents:r.get(3)?,date:r.get(4)?,payment_method:r.get(5)?,client_id:r.get(6)?,staff_id:r.get(7)?,staff_name:r.get(8)?,source:r.get(9)?,sale_type:r.get(10)?,commission_percent:r.get(11)?,commission_cents:r.get(12)?,net_cents:r.get(13)?})).map_err(|e|e.to_string())?;
@@ -12,7 +12,7 @@ fn create_cash_transaction(state:State<DbState>,input:CreateCashInput)->Result<C
     let kind=if input.kind=="despesa"{"despesa"}else{"entrada"}; let mut desc=input.description.trim().to_string();
     if desc.is_empty(){return Err("Informe a descrição do lançamento.".into())} if !valid_date(&input.date){return Err("Data inválida.".into())}
     let payment=input.payment_method.unwrap_or_default(); let sale_type=input.sale_type.unwrap_or_else(||"other".into());
-    let mut c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?; operations::ensure_schema(&c)?;
+    let mut c=state.connection.lock().map_err(|_|BUSY.to_string())?; operations::ensure_schema(&c)?;
     let(staff_name,service_default,product_default)=staff_identity(&c,input.staff_id)?; let mut amount=input.amount_cents; let mut commission_percent=0; let mut commission_cents=0; let mut stock_movement_id:Option<i64>=None;
     let tx=c.transaction().map_err(|e|e.to_string())?;
     if kind=="entrada"&&sale_type=="product"{
@@ -36,7 +36,7 @@ fn create_cash_transaction(state:State<DbState>,input:CreateCashInput)->Result<C
 #[tauri::command]
 fn monthly_report(state:State<DbState>,year:i32)->Result<MonthlyReport,String>{
     if !(2000..=2100).contains(&year){return Err("Ano inválido.".into())}
-    let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;
+    let c=state.connection.lock().map_err(|_|BUSY.to_string())?;
     let mut months=Vec::new(); let mut yi=0; let mut ye=0; let mut yc=0;
     for m in 1..=12u32{
         let prefix=format!("{:04}-{:02}",year,m);
@@ -49,7 +49,7 @@ fn monthly_report(state:State<DbState>,year:i32)->Result<MonthlyReport,String>{
 
 #[tauri::command]
 fn list_products(state:State<DbState>)->Result<Vec<Product>,String>{
-    let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;
+    let c=state.connection.lock().map_err(|_|BUSY.to_string())?;
     let mut s=c.prepare("SELECT id,name,description,price_cents,stock,active FROM products WHERE active=1 ORDER BY name COLLATE NOCASE").map_err(|e|e.to_string())?;
     let rows=s.query_map([],|r|Ok(Product{id:r.get(0)?,name:r.get(1)?,description:r.get(2)?,price_cents:r.get(3)?,stock:r.get(4)?,active:r.get::<_,i64>(5)?!=0})).map_err(|e|e.to_string())?;
     rows.collect::<Result<Vec<_>,_>>().map_err(|e|e.to_string())
@@ -57,33 +57,34 @@ fn list_products(state:State<DbState>)->Result<Vec<Product>,String>{
 #[tauri::command]
 fn create_product(state:State<DbState>,input:CreateProductInput)->Result<Product,String>{
     let name=input.name.trim();if name.is_empty(){return Err("Informe o nome do produto.".into())}if input.price_cents<=0{return Err("Informe um preço maior que zero.".into())}if input.stock<0{return Err("Estoque inválido.".into())}
-    let desc=input.description.unwrap_or_default();let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;
+    let desc=input.description.unwrap_or_default();let c=state.connection.lock().map_err(|_|BUSY.to_string())?;
     c.execute("INSERT INTO products(name,description,price_cents,stock,active,created_at) VALUES(?1,?2,?3,?4,1,?5)",params![name,desc,input.price_cents,input.stock,Utc::now().to_rfc3339()]).map_err(|e|e.to_string())?;
     Ok(Product{id:c.last_insert_rowid(),name:name.into(),description:desc,price_cents:input.price_cents,stock:input.stock,active:true})
 }
 #[tauri::command]
 fn adjust_stock(state:State<DbState>,input:StockAdjustmentInput)->Result<(),String>{
-    if input.quantity==0{return Err("Informe uma quantidade diferente de zero.".into())}let note=input.note.unwrap_or_default();let mut c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;
+    if input.quantity==0{return Err("Informe uma quantidade diferente de zero.".into())}let note=input.note.unwrap_or_default();let mut c=state.connection.lock().map_err(|_|BUSY.to_string())?;
     let current:i64=c.query_row("SELECT stock FROM products WHERE id=?1 AND active=1",params![input.product_id],|r|r.get(0)).map_err(|_|"Produto não encontrado.".to_string())?;if current+input.quantity<0{return Err("Estoque insuficiente.".into())}
     let tx=c.transaction().map_err(|e|e.to_string())?;tx.execute("UPDATE products SET stock=stock+?1 WHERE id=?2",params![input.quantity,input.product_id]).map_err(|e|e.to_string())?;tx.execute("INSERT INTO stock_movements(product_id,quantity,note,created_at) VALUES(?1,?2,?3,?4)",params![input.product_id,input.quantity,note,Utc::now().to_rfc3339()]).map_err(|e|e.to_string())?;tx.commit().map_err(|e|e.to_string())?;Ok(())
 }
 
 #[tauri::command]
-fn get_business_settings(state:State<DbState>)->Result<BusinessSettings,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;c.query_row("SELECT business_name,owner_name,phone,whatsapp,address,logo_path,currency,timezone,backup_destination,configured FROM business_settings WHERE id=1",[],|r|Ok(BusinessSettings{business_name:r.get(0)?,owner_name:r.get(1)?,phone:r.get(2)?,whatsapp:r.get(3)?,address:r.get(4)?,logo_path:r.get(5)?,currency:r.get(6)?,timezone:r.get(7)?,backup_destination:r.get(8)?,configured:r.get::<_,i64>(9)?!=0})).map_err(|e|e.to_string())}
+fn get_business_settings(state:State<DbState>)->Result<BusinessSettings,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;c.query_row("SELECT business_name,owner_name,phone,whatsapp,address,logo_path,currency,timezone,backup_destination,configured FROM business_settings WHERE id=1",[],|r|Ok(BusinessSettings{business_name:r.get(0)?,owner_name:r.get(1)?,phone:r.get(2)?,whatsapp:r.get(3)?,address:r.get(4)?,logo_path:r.get(5)?,currency:r.get(6)?,timezone:r.get(7)?,backup_destination:r.get(8)?,configured:r.get::<_,i64>(9)?!=0})).map_err(|e|e.to_string())}
 #[tauri::command]
-fn save_business_settings(state:State<DbState>,input:BusinessSettings)->Result<BusinessSettings,String>{let name=input.business_name.trim();if name.is_empty(){return Err("Informe o nome da barbearia.".into())}let currency=if input.currency.trim().is_empty(){"BRL"}else{input.currency.trim()};let timezone=if input.timezone.trim().is_empty(){"America/Sao_Paulo"}else{input.timezone.trim()};let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;c.execute("UPDATE business_settings SET business_name=?1,owner_name=?2,phone=?3,whatsapp=?4,address=?5,logo_path=?6,currency=?7,timezone=?8,backup_destination=?9,configured=1,updated_at=?10 WHERE id=1",params![name,input.owner_name.trim(),input.phone.trim(),input.whatsapp.trim(),input.address.trim(),input.logo_path.trim(),currency,timezone,input.backup_destination.trim(),Utc::now().to_rfc3339()]).map_err(|e|e.to_string())?;Ok(BusinessSettings{business_name:name.into(),owner_name:input.owner_name,phone:input.phone,whatsapp:input.whatsapp,address:input.address,logo_path:input.logo_path,currency:currency.into(),timezone:timezone.into(),backup_destination:input.backup_destination,configured:true})}
+fn save_business_settings(state:State<DbState>,input:BusinessSettings)->Result<BusinessSettings,String>{let name=input.business_name.trim();if name.is_empty(){return Err("Informe o nome da barbearia.".into())}let currency=if input.currency.trim().is_empty(){"BRL"}else{input.currency.trim()};let timezone=if input.timezone.trim().is_empty(){"America/Sao_Paulo"}else{input.timezone.trim()};let c=state.connection.lock().map_err(|_|BUSY.to_string())?;c.execute("UPDATE business_settings SET business_name=?1,owner_name=?2,phone=?3,whatsapp=?4,address=?5,logo_path=?6,currency=?7,timezone=?8,backup_destination=?9,configured=1,updated_at=?10 WHERE id=1",params![name,input.owner_name.trim(),input.phone.trim(),input.whatsapp.trim(),input.address.trim(),input.logo_path.trim(),currency,timezone,input.backup_destination.trim(),Utc::now().to_rfc3339()]).map_err(|e|e.to_string())?;Ok(BusinessSettings{business_name:name.into(),owner_name:input.owner_name,phone:input.phone,whatsapp:input.whatsapp,address:input.address,logo_path:input.logo_path,currency:currency.into(),timezone:timezone.into(),backup_destination:input.backup_destination,configured:true})}
 
 #[tauri::command]
-fn list_backups(state:State<DbState>)->Result<Vec<BackupItem>,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;let dir=backup_dir(&state,&c);fs::create_dir_all(&dir).map_err(|e|e.to_string())?;let mut out=Vec::new();for entry in fs::read_dir(&dir).map_err(|e|e.to_string())?{let p=entry.map_err(|e|e.to_string())?.path();if p.extension().and_then(|x|x.to_str())!=Some("db"){continue}let meta=fs::metadata(&p).map_err(|e|e.to_string())?;out.push(BackupItem{file_name:p.file_name().and_then(|x|x.to_str()).unwrap_or("").into(),path:p.display().to_string(),size_bytes:meta.len(),created_at:backup_timestamp(&p)})}out.sort_by(|a,b|b.file_name.cmp(&a.file_name));Ok(out)}
+fn list_backups(state:State<DbState>)->Result<Vec<BackupItem>,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;let dir=backup_dir(&state,&c);fs::create_dir_all(&dir).map_err(|e|e.to_string())?;let mut out=Vec::new();for entry in fs::read_dir(&dir).map_err(|e|e.to_string())?{let p=entry.map_err(|e|e.to_string())?.path();if p.extension().and_then(|x|x.to_str())!=Some("db"){continue}let meta=fs::metadata(&p).map_err(|e|e.to_string())?;out.push(BackupItem{file_name:p.file_name().and_then(|x|x.to_str()).unwrap_or("").into(),path:p.display().to_string(),size_bytes:meta.len(),created_at:backup_timestamp(&p)})}out.sort_by(|a,b|b.file_name.cmp(&a.file_name));Ok(out)}
 #[tauri::command]
-fn create_backup(state:State<DbState>)->Result<BackupItem,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;let dir=backup_dir(&state,&c);fs::create_dir_all(&dir).map_err(|e|e.to_string())?;let stamp=Local::now().format("%Y%m%d-%H%M%S").to_string();let path=dir.join(format!("barbershop-backup-{}.db",stamp));let escaped=path.display().to_string().replace('\'',"''");c.execute_batch("PRAGMA wal_checkpoint(FULL);").map_err(|e|e.to_string())?;c.execute_batch(&format!("VACUUM INTO '{}';",escaped)).map_err(|e|e.to_string())?;let meta=fs::metadata(&path).map_err(|e|e.to_string())?;Ok(BackupItem{file_name:path.file_name().and_then(|x|x.to_str()).unwrap_or("").into(),path:path.display().to_string(),size_bytes:meta.len(),created_at:backup_timestamp(&path)})}
+fn create_backup(state:State<DbState>)->Result<BackupItem,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;let dir=backup_dir(&state,&c);fs::create_dir_all(&dir).map_err(|e|e.to_string())?;let stamp=Local::now().format("%Y%m%d-%H%M%S").to_string();let path=dir.join(format!("barbershop-backup-{}.db",stamp));let escaped=path.display().to_string().replace('\'',"''");c.execute_batch("PRAGMA wal_checkpoint(FULL);").map_err(|e|e.to_string())?;c.execute_batch(&format!("VACUUM INTO '{}';",escaped)).map_err(|e|e.to_string())?;let meta=fs::metadata(&path).map_err(|e|e.to_string())?;Ok(BackupItem{file_name:path.file_name().and_then(|x|x.to_str()).unwrap_or("").into(),path:path.display().to_string(),size_bytes:meta.len(),created_at:backup_timestamp(&path)})}
+const INVALID_BACKUP:&str="Este arquivo não é um backup válido do app.";
 #[tauri::command]
 fn restore_backup(state:State<DbState>,path:String)->Result<(),String>{
     let source=PathBuf::from(&path);
     if !source.exists(){return Err("Arquivo de backup não encontrado.".into())}
     {
-        let check=Connection::open(&source).map_err(|e|format!("Backup inválido: {}",e))?;
-        let integrity:String=check.query_row("PRAGMA integrity_check",[],|r|r.get(0)).map_err(|e|format!("Backup inválido: {}",e))?;
+        let check=Connection::open(&source).map_err(|_|INVALID_BACKUP.to_string())?;
+        let integrity:String=check.query_row("PRAGMA integrity_check",[],|r|r.get(0)).map_err(|_|INVALID_BACKUP.to_string())?;
         if integrity!="ok"{return Err(format!("Backup reprovado na verificação: {}",integrity))}
     }
     let db=PathBuf::from(&state.database_path);
@@ -92,7 +93,7 @@ fn restore_backup(state:State<DbState>,path:String)->Result<(),String>{
     let staging=db.with_extension("db.restoring");
     let _=fs::remove_file(&staging);
     fs::copy(&source,&staging).map_err(|e|format!("Não foi possível copiar o backup: {}",e))?;
-    let mut guard=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;
+    let mut guard=state.connection.lock().map_err(|_|BUSY.to_string())?;
     // 2) Backup de segurança do banco atual.
     let safety_dir=PathBuf::from(&state.storage_root).join("backups");
     fs::create_dir_all(&safety_dir).map_err(|e|e.to_string())?;
@@ -132,4 +133,4 @@ fn restore_backup(state:State<DbState>,path:String)->Result<(),String>{
     }
 }
 #[tauri::command]
-fn maintenance_report(state:State<DbState>)->Result<MaintenanceReport,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;let integrity:String=c.query_row("PRAGMA integrity_check",[],|r|r.get(0)).map_err(|e|e.to_string())?;let schema:i64=c.query_row("SELECT version FROM schema_meta WHERE id=1",[],|r|r.get(0)).map_err(|e|e.to_string())?;let size=fs::metadata(&state.database_path).map(|m|m.len()).unwrap_or(0);let dir=backup_dir(&state,&c);let mut last=String::new();if let Ok(entries)=fs::read_dir(dir){for e in entries.flatten(){let p=e.path();if p.extension().and_then(|x|x.to_str())==Some("db"){let t=backup_timestamp(&p);if t>last{last=t}}}}Ok(MaintenanceReport{integrity,database_size_bytes:size,schema_version:schema,storage_mode:state.storage_mode.clone(),database_path:state.database_path.clone(),last_backup:last})}
+fn maintenance_report(state:State<DbState>)->Result<MaintenanceReport,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;let integrity:String=c.query_row("PRAGMA integrity_check",[],|r|r.get(0)).map_err(|e|e.to_string())?;let schema:i64=c.query_row("SELECT version FROM schema_meta WHERE id=1",[],|r|r.get(0)).map_err(|e|e.to_string())?;let size=fs::metadata(&state.database_path).map(|m|m.len()).unwrap_or(0);let dir=backup_dir(&state,&c);let mut last=String::new();if let Ok(entries)=fs::read_dir(dir){for e in entries.flatten(){let p=e.path();if p.extension().and_then(|x|x.to_str())==Some("db"){let t=backup_timestamp(&p);if t>last{last=t}}}}Ok(MaintenanceReport{integrity,database_size_bytes:size,schema_version:schema,storage_mode:state.storage_mode.clone(),database_path:state.database_path.clone(),last_backup:last})}

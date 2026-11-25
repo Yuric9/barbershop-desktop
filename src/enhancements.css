@@ -34,15 +34,6 @@
   order: 8;
   min-height: 42px;
 }
-.cash-reset-note {
-  order: 9;
-  grid-column: 1/-1;
-  border-top: 1px solid var(--line);
-  padding: 11px 2px 0;
-  color: var(--ink-faint);
-  font-size: var(--text-xs);
-  line-height: 1.45;
-}
 
 /* ---------- Indicadores do Caixa: um símbolo pequeno diz o que cada número é ---------- */
 .cash-kpi-visual {

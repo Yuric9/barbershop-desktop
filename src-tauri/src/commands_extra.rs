@@ -4,7 +4,7 @@ struct EditAppointmentFullInput { id:i64, client_id:Option<i64>, client_name:Str
 
 #[tauri::command]
 fn edit_appointment_full(state:State<DbState>,input:EditAppointmentFullInput)->Result<(),String>{
-    let mut c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;
+    let mut c=state.connection.lock().map_err(|_|BUSY.to_string())?;
     let status:String=c.query_row("SELECT status FROM appointments WHERE id=?1",params![input.id],|r|r.get(0)).map_err(|_|"Agendamento não encontrado.".to_string())?;
     if status=="Finalizado"||status=="Cancelado"{return Err("Atendimento finalizado/cancelado não pode ser alterado diretamente. Exclua/corrija o lançamento ou faça um novo agendamento.".into())}
     let(services,dur,total)=service_summary(&c,&input.service_ids)?;
@@ -20,39 +20,39 @@ fn edit_appointment_full(state:State<DbState>,input:EditAppointmentFullInput)->R
     tx.commit().map_err(|e|e.to_string())?;Ok(())
 }
 
-#[tauri::command] fn list_opening_hours_cmd(state:State<DbState>)->Result<Vec<opening_hours::OpeningHour>,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;opening_hours::list(&c)}
-#[tauri::command] fn save_opening_hours_cmd(state:State<DbState>,rows:Vec<opening_hours::OpeningHour>)->Result<(),String>{let mut c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;opening_hours::save(&mut c,rows)}
+#[tauri::command] fn list_opening_hours_cmd(state:State<DbState>)->Result<Vec<opening_hours::OpeningHour>,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;opening_hours::list(&c)}
+#[tauri::command] fn save_opening_hours_cmd(state:State<DbState>,rows:Vec<opening_hours::OpeningHour>)->Result<(),String>{let mut c=state.connection.lock().map_err(|_|BUSY.to_string())?;opening_hours::save(&mut c,rows)}
 
-#[tauri::command] fn update_client_record(state:State<DbState>,input:operations::UpdateClientInput)->Result<(),String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::update_client(&c,input)}
-#[tauri::command] fn set_client_active(state:State<DbState>,id:i64,active:bool)->Result<(),String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::set_client_active(&c,id,active)}
-#[tauri::command] fn delete_client_safe(state:State<DbState>,id:i64)->Result<(),String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::delete_client_safe(&c,id)}
-#[tauri::command] fn update_service_record(state:State<DbState>,input:operations::UpdateServiceInput)->Result<(),String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::update_service(&c,input)}
-#[tauri::command] fn set_service_active(state:State<DbState>,id:i64,active:bool)->Result<(),String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::set_service_active(&c,id,active)}
-#[tauri::command] fn delete_service_safe(state:State<DbState>,id:i64)->Result<(),String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::delete_service_safe(&c,id)}
-#[tauri::command] fn update_staff_record(state:State<DbState>,input:operations::UpdateStaffInput)->Result<(),String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::update_staff(&c,input)}
-#[tauri::command] fn set_staff_active(state:State<DbState>,id:i64,active:bool)->Result<(),String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::set_staff_active(&c,id,active)}
-#[tauri::command] fn delete_staff_safe(state:State<DbState>,id:i64)->Result<(),String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::delete_staff_safe(&c,id)}
-#[tauri::command] fn update_product_record(state:State<DbState>,input:operations::UpdateProductInput)->Result<(),String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::update_product(&c,input)}
-#[tauri::command] fn set_product_active(state:State<DbState>,id:i64,active:bool)->Result<(),String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::set_product_active(&c,id,active)}
-#[tauri::command] fn delete_product_safe(state:State<DbState>,id:i64)->Result<(),String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::delete_product_safe(&c,id)}
-#[tauri::command] fn archived_items(state:State<DbState>,kind:String)->Result<Vec<operations::ArchivedItem>,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::archived_items(&c,&kind)}
-#[tauri::command] fn restore_archived(state:State<DbState>,kind:String,id:i64)->Result<(),String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::restore_archived(&c,&kind,id)}
+#[tauri::command] fn update_client_record(state:State<DbState>,input:operations::UpdateClientInput)->Result<(),String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::update_client(&c,input)}
+#[tauri::command] fn set_client_active(state:State<DbState>,id:i64,active:bool)->Result<(),String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::set_client_active(&c,id,active)}
+#[tauri::command] fn delete_client_safe(state:State<DbState>,id:i64)->Result<(),String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::delete_client_safe(&c,id)}
+#[tauri::command] fn update_service_record(state:State<DbState>,input:operations::UpdateServiceInput)->Result<(),String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::update_service(&c,input)}
+#[tauri::command] fn set_service_active(state:State<DbState>,id:i64,active:bool)->Result<(),String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::set_service_active(&c,id,active)}
+#[tauri::command] fn delete_service_safe(state:State<DbState>,id:i64)->Result<(),String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::delete_service_safe(&c,id)}
+#[tauri::command] fn update_staff_record(state:State<DbState>,input:operations::UpdateStaffInput)->Result<(),String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::update_staff(&c,input)}
+#[tauri::command] fn set_staff_active(state:State<DbState>,id:i64,active:bool)->Result<(),String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::set_staff_active(&c,id,active)}
+#[tauri::command] fn delete_staff_safe(state:State<DbState>,id:i64)->Result<(),String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::delete_staff_safe(&c,id)}
+#[tauri::command] fn update_product_record(state:State<DbState>,input:operations::UpdateProductInput)->Result<(),String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::update_product(&c,input)}
+#[tauri::command] fn set_product_active(state:State<DbState>,id:i64,active:bool)->Result<(),String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::set_product_active(&c,id,active)}
+#[tauri::command] fn delete_product_safe(state:State<DbState>,id:i64)->Result<(),String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::delete_product_safe(&c,id)}
+#[tauri::command] fn archived_items(state:State<DbState>,kind:String)->Result<Vec<operations::ArchivedItem>,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::archived_items(&c,&kind)}
+#[tauri::command] fn restore_archived(state:State<DbState>,kind:String,id:i64)->Result<(),String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::restore_archived(&c,&kind,id)}
 
-#[tauri::command] fn update_cash_record(state:State<DbState>,input:operations::UpdateCashInput)->Result<(),String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::update_cash_manual(&c,input)}
-#[tauri::command] fn delete_cash_record(state:State<DbState>,id:i64)->Result<(),String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::delete_cash_transaction(&c,id)}
+#[tauri::command] fn update_cash_record(state:State<DbState>,input:operations::UpdateCashInput)->Result<(),String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::update_cash_manual(&c,input)}
+#[tauri::command] fn delete_cash_record(state:State<DbState>,id:i64)->Result<(),String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::delete_cash_transaction(&c,id)}
 
-#[tauri::command] fn create_staff_settlement(state:State<DbState>,staff_id:i64,start_date:String,end_date:String)->Result<operations::StaffSettlement,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::create_staff_settlement(&c,staff_id,&start_date,&end_date)}
-#[tauri::command] fn list_staff_settlements(state:State<DbState>,staff_id:i64)->Result<Vec<operations::StaffSettlement>,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::list_staff_settlements(&c,staff_id)}
-#[tauri::command] fn reopen_staff_settlement(state:State<DbState>,id:i64)->Result<(),String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::reopen_staff_settlement(&c,id)}
+#[tauri::command] fn create_staff_settlement(state:State<DbState>,staff_id:i64,start_date:String,end_date:String)->Result<operations::StaffSettlement,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::create_staff_settlement(&c,staff_id,&start_date,&end_date)}
+#[tauri::command] fn list_staff_settlements(state:State<DbState>,staff_id:i64)->Result<Vec<operations::StaffSettlement>,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::list_staff_settlements(&c,staff_id)}
+#[tauri::command] fn reopen_staff_settlement(state:State<DbState>,id:i64)->Result<(),String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::reopen_staff_settlement(&c,id)}
 
-#[tauri::command] fn remarketing_clients(state:State<DbState>,minimum_days:i64,reference_date:String)->Result<Vec<operations::RemarketingClient>,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::remarketing_clients(&c,minimum_days,&reference_date)}
-#[tauri::command] fn get_whatsapp_settings(state:State<DbState>)->Result<operations::WhatsAppSettings,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::public_whatsapp_settings(&c)}
-#[tauri::command] fn save_whatsapp_settings(state:State<DbState>,input:operations::WhatsAppSettings)->Result<operations::WhatsAppSettings,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::save_whatsapp_settings(&c,input)}
+#[tauri::command] fn remarketing_clients(state:State<DbState>,minimum_days:i64,reference_date:String)->Result<Vec<operations::RemarketingClient>,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::remarketing_clients(&c,minimum_days,&reference_date)}
+#[tauri::command] fn get_whatsapp_settings(state:State<DbState>)->Result<operations::WhatsAppSettings,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::public_whatsapp_settings(&c)}
+#[tauri::command] fn save_whatsapp_settings(state:State<DbState>,input:operations::WhatsAppSettings)->Result<operations::WhatsAppSettings,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::save_whatsapp_settings(&c,input)}
 // Comando assíncrono: roda fora da thread da janela, então a tela não congela enquanto espera a Meta.
 // O cadeado do banco é solto ANTES da chamada de rede, para o resto do app continuar funcionando.
 #[tauri::command]
 async fn send_whatsapp_text(state:State<'_,DbState>,client_id:Option<i64>,phone:String,message_type:String,text:String)->Result<operations::WhatsAppSendResult,String>{
-    let prepared={let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;operations::prepare_whatsapp_send(&c,client_id,&phone,&message_type,&text)?};
+    let prepared={let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::prepare_whatsapp_send(&c,client_id,&phone,&message_type,&text)?};
     let outcome=async{
         let client=reqwest::Client::builder().timeout(std::time::Duration::from_secs(15)).build().map_err(|e|e.to_string())?;
         let resp=client.post(&prepared.url).bearer_auth(&prepared.token).json(&prepared.payload).send().await.map_err(|e|format!("Falha de conexão com WhatsApp API: {}",e))?;
@@ -61,10 +61,10 @@ async fn send_whatsapp_text(state:State<'_,DbState>,client_id:Option<i64>,phone:
         if status.is_success(){Ok(body.get("messages").and_then(|v|v.get(0)).and_then(|v|v.get("id")).and_then(|v|v.as_str()).unwrap_or("").to_string())}
         else{Err(format!("WhatsApp API recusou o envio ({}): {}",status,body))}
     }.await;
-    let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;
+    let c=state.connection.lock().map_err(|_|BUSY.to_string())?;
     operations::finish_whatsapp_send(&c,prepared.log_id,outcome)
 }
 
-#[tauri::command] fn maintenance_diagnosis(state:State<DbState>)->Result<maintenance::MaintenanceDiagnosis,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;maintenance::diagnose(&c,Path::new(&state.database_path))}
-#[tauri::command] fn run_maintenance_repair(state:State<DbState>,action:String)->Result<maintenance::RepairResult,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;let dir=PathBuf::from(&state.storage_root).join("backups");maintenance::run_safe_repair(&c,&dir,&action)}
-#[tauri::command] fn write_support_report(state:State<DbState>)->Result<String,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;let diagnosis=maintenance::diagnose(&c,Path::new(&state.database_path))?;let dir=PathBuf::from(&state.storage_root).join("logs");maintenance::write_support_report(&dir,&diagnosis,Path::new(&state.database_path),&state.storage_mode)}
+#[tauri::command] fn maintenance_diagnosis(state:State<DbState>)->Result<maintenance::MaintenanceDiagnosis,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;maintenance::diagnose(&c,Path::new(&state.database_path))}
+#[tauri::command] fn run_maintenance_repair(state:State<DbState>,action:String)->Result<maintenance::RepairResult,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;let dir=PathBuf::from(&state.storage_root).join("backups");maintenance::run_safe_repair(&c,&dir,&action)}
+#[tauri::command] fn write_support_report(state:State<DbState>)->Result<String,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;let diagnosis=maintenance::diagnose(&c,Path::new(&state.database_path))?;let dir=PathBuf::from(&state.storage_root).join("logs");maintenance::write_support_report(&dir,&diagnosis,Path::new(&state.database_path),&state.storage_mode)}

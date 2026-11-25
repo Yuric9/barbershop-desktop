@@ -55,7 +55,7 @@ export function RemarketingPage({ ctx }: { ctx: AppCtx }) {
             </div>
           ))
         ) : (
-          <p className="muted">Nenhum cliente neste filtro.</p>
+          <p className="muted">Nenhum cliente está há tanto tempo sem visita.</p>
         )}
       </div>
     </>

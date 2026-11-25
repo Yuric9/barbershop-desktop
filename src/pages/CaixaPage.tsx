@@ -36,10 +36,9 @@ export function CaixaPage({ ctx }: { ctx: AppCtx }) {
     <>
       <div className="page-head">
         <div>
-          <h1>Caixa / Livro diário</h1>
+          <h1>Caixa</h1>
           <p className="muted">
-            Todo lançamento de entrada do tipo Serviço conta como atendimento concluído. Ao excluir, o
-            lançamento sai dos cálculos após confirmação.
+            Entradas e despesas do período. Cada serviço lançado aqui conta como um atendimento.
           </p>
         </div>
       </div>
@@ -130,7 +129,7 @@ export function CaixaPage({ ctx }: { ctx: AppCtx }) {
           ))}
         </select>
         <select name="staffId">
-          <option value="">Sem colaborador / proprietário</option>
+          <option value="">Sem colaborador</option>
           {staff.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}

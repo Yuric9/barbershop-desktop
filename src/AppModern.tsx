@@ -40,7 +40,7 @@ export default function AppModern() {
     refresh,
     finishAppointment,
   } = ctx;
-  if (settings === null) return <main className="loading-screen">Abrindo banco local...</main>;
+  if (settings === null) return <main className="loading-screen">Abrindo seus dados…</main>;
   if (!settings.configured)
     return (
       <main className="onboarding">
@@ -77,7 +77,7 @@ export default function AppModern() {
       <aside>
         <div className="brand">
           <strong>{settings.businessName}</strong>
-          <small>Desktop · {health?.storageMode === "portable" ? "Portátil" : "Instalado"}</small>
+          <small>{health?.storageMode === "portable" ? "Modo portátil" : "Instalado neste computador"}</small>
         </div>
         {nav.map(([k, l]) => (
           <button key={k} className={tab === k ? "active" : ""} onClick={() => setTab(k)}>

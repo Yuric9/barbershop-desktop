@@ -260,7 +260,7 @@ export function EditDrawer({
                 <input name="phone" defaultValue={target.item.phone} />
               </label>
               <label>
-                Profissional
+                Colaborador
                 <select name="staffId" defaultValue={target.item.staffId || ""}>
                   <option value="">Sem colaborador</option>
                   {staff.map((s) => (
