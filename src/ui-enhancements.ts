@@ -93,7 +93,9 @@ function enhanceCash() {
   if (!form) return;
 
   const kind = form.querySelector<HTMLSelectElement>('select[name="kind"]');
-  const saleType = [...form.querySelectorAll<HTMLSelectElement>("select")].find((select) => !select.name);
+  const saleType = form.querySelector<HTMLSelectElement>('select[name="saleType"]');
+  const product = form.querySelector<HTMLSelectElement>('select[name="productId"]');
+  const quantity = form.querySelector<HTMLInputElement>('input[name="quantity"]');
   const service = form.querySelector<HTMLSelectElement>('select[name="serviceId"]');
   const description = form.querySelector<HTMLInputElement>('input[name="description"]');
   const amount = form.querySelector<HTMLInputElement>('input[name="amount"]');
@@ -103,11 +105,8 @@ function enhanceCash() {
   const staff = form.querySelector<HTMLSelectElement>('select[name="staffId"]');
   const submit = form.querySelector<HTMLButtonElement>('button[type="submit"], button:not([type])');
 
-  if (saleType) saleType.dataset.uiHidden = "true";
-  if (description) {
-    description.dataset.uiHidden = "true";
-    description.tabIndex = -1;
-  }
+  // Antes, o tipo do lançamento e a descrição eram escondidos aqui, o que impedia vender
+  // produtos e lançar despesas. Agora o próprio formulário mostra só os campos de cada tipo.
 
   if (amount) {
     amount.readOnly = false;
@@ -123,6 +122,10 @@ function enhanceCash() {
   if (staff) staff.title = "Colaborador";
 
   markCashField(kind, "kind");
+  markCashField(saleType, "saletype");
+  markCashField(product, "product");
+  markCashField(quantity, "quantity");
+  markCashField(description, "description");
   markCashField(service, "service");
   markCashField(amount, "amount");
   markCashField(client, "client");

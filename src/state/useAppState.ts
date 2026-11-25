@@ -44,6 +44,7 @@ export function useAppState() {
   const [cashStart, setCashStart] = useState(monthStart()),
     [cashEnd, setCashEnd] = useState(localDate()),
     [cashEntryDate, setCashEntryDate] = useState(localDate()),
+    [cashKind, setCashKind] = useState<"entrada" | "despesa">("entrada"),
     [cashSaleType, setCashSaleType] = useState<"service" | "product" | "other">("service"),
     [cashDescription, setCashDescription] = useState(""),
     [cashAmount, setCashAmount] = useState(""),
@@ -452,7 +453,7 @@ export function useAppState() {
     e.preventDefault();
     const form = e.currentTarget,
       f = new FormData(form),
-      kind = String(f.get("kind")) === "despesa" ? "despesa" : "entrada";
+      kind = cashKind;
     const ok = await mutate(
       () =>
         desktopApi.createCashTransaction({
@@ -474,6 +475,10 @@ export function useAppState() {
     );
     if (ok) {
       form.reset();
+      // form.reset() volta as caixas para "Entrada" / "Serviço" na tela; o estado do React
+      // precisa acompanhar, senão a tela mostra "Serviço" com os campos de produto.
+      setCashKind("entrada");
+      setCashSaleType("service");
       setCashEntryDate(localDate());
       setCashDescription("");
       setCashAmount("");
@@ -644,6 +649,8 @@ export function useAppState() {
     cashEntryDate,
     setCashEntryDate,
     cashSaleType,
+    cashKind,
+    setCashKind,
     setCashSaleType,
     cashDescription,
     setCashDescription,

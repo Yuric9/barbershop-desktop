@@ -16,6 +16,8 @@ export function CaixaPage({ ctx }: { ctx: AppCtx }) {
     cashEntryDate,
     setCashEntryDate,
     cashSaleType,
+    cashKind,
+    setCashKind,
     cashDescription,
     setCashDescription,
     cashAmount,
@@ -32,6 +34,9 @@ export function CaixaPage({ ctx }: { ctx: AppCtx }) {
     addCash,
     deleteCash,
   } = ctx;
+  const isEntry = cashKind === "entrada";
+  const isService = isEntry && cashSaleType === "service";
+  const isProduct = isEntry && cashSaleType === "product";
   return (
     <>
       <div className="page-head">
@@ -49,16 +54,26 @@ export function CaixaPage({ ctx }: { ctx: AppCtx }) {
         <Kpi label="Resultado da barbearia" value={money(balance)} />
       </div>
       <form className="card form cash-form" onSubmit={addCash}>
-        <select name="kind">
+        <select
+          name="kind"
+          value={cashKind}
+          onChange={(e) => setCashKind(e.target.value as "entrada" | "despesa")}
+        >
           <option value="entrada">Entrada</option>
           <option value="despesa">Despesa</option>
         </select>
-        <select value={cashSaleType} onChange={(e) => changeCashSaleType(e.target.value as any)}>
-          <option value="service">Serviço</option>
-          <option value="product">Venda de produto</option>
-          <option value="other">Outro lançamento</option>
-        </select>
-        {cashSaleType === "service" && (
+        {isEntry && (
+          <select
+            name="saleType"
+            value={cashSaleType}
+            onChange={(e) => changeCashSaleType(e.target.value as "service" | "product" | "other")}
+          >
+            <option value="service">Serviço</option>
+            <option value="product">Venda de produto</option>
+            <option value="other">Outra entrada</option>
+          </select>
+        )}
+        {isService && (
           <select
             name="serviceId"
             value={cashServiceId}
@@ -73,15 +88,34 @@ export function CaixaPage({ ctx }: { ctx: AppCtx }) {
             ))}
           </select>
         )}
-        <input
-          name="description"
-          value={cashDescription}
-          onChange={(e) => setCashDescription(e.target.value)}
-          placeholder="Descrição"
-          readOnly={cashSaleType === "service" && !!cashServiceId}
-          required={cashSaleType !== "product"}
-        />
-        {cashSaleType !== "product" && (
+        {isProduct && (
+          <>
+            <select name="productId" required>
+              <option value="">Selecione o produto</option>
+              {products.map((p) => (
+                <option key={p.id} value={p.id} disabled={p.stock <= 0}>
+                  {p.name} · {money(p.priceCents)} · estoque {p.stock}
+                </option>
+              ))}
+            </select>
+            <input name="quantity" type="number" min="1" step="1" defaultValue="1" title="Quantidade" />
+          </>
+        )}
+        {/* Serviço: a descrição vem do serviço escolhido. Produto: o app monta sozinho. */}
+        {isService ? (
+          <input type="hidden" name="description" value={cashDescription} />
+        ) : (
+          !isProduct && (
+            <input
+              name="description"
+              value={cashDescription}
+              onChange={(e) => setCashDescription(e.target.value)}
+              placeholder={cashKind === "despesa" ? "Descrição (ex.: aluguel, luz)" : "Descrição"}
+              required
+            />
+          )
+        )}
+        {!isProduct && (
           <input
             name="amount"
             type="number"
@@ -90,22 +124,8 @@ export function CaixaPage({ ctx }: { ctx: AppCtx }) {
             value={cashAmount}
             onChange={(e) => setCashAmount(e.target.value)}
             placeholder="Valor"
-            readOnly={cashSaleType === "service" && !!cashServiceId}
             required
           />
-        )}
-        {cashSaleType === "product" && (
-          <>
-            <select name="productId" required>
-              <option value="">Produto vendido</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} · {money(p.priceCents)} · estoque {p.stock}
-                </option>
-              ))}
-            </select>
-            <input name="quantity" type="number" min="1" step="1" defaultValue="1" />
-          </>
         )}
         <input
           name="date"
@@ -120,22 +140,26 @@ export function CaixaPage({ ctx }: { ctx: AppCtx }) {
           <option value="Débito">Débito</option>
           <option value="Crédito">Crédito</option>
         </select>
-        <select name="clientId">
-          <option value="">Sem cliente</option>
-          {clients.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <select name="staffId">
-          <option value="">Sem colaborador</option>
-          {staff.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
+        {isEntry && (
+          <select name="clientId">
+            <option value="">Sem cliente</option>
+            {clients.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        )}
+        {isEntry && (
+          <select name="staffId">
+            <option value="">Sem colaborador</option>
+            {staff.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        )}
         <button className="primary">Salvar lançamento</button>
       </form>
       <div className="filter card compact">

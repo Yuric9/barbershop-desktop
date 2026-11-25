@@ -86,6 +86,7 @@ small {
 
 /* ---------- Botões ---------- */
 aside > button,
+.page-head > button:not(.primary),
 .row-actions button,
 .filter button,
 .secondary,
