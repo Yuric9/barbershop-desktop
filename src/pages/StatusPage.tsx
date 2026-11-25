@@ -1,4 +1,5 @@
-import { money } from "../lib/format";
+import { daysSince, money } from "../lib/format";
+import { desktopApi } from "../desktop-api";
 import { Kpi, Metric } from "../components/ui";
 import { AppointmentRow } from "../components/AppointmentRow";
 import type { AppCtx } from "../state/useAppState";
@@ -19,9 +20,15 @@ export function StatusPage({ ctx }: { ctx: AppCtx }) {
     nextAppointment,
     sendAppointmentWhatsApp,
     changeStatus,
+    maintenance,
+    mutate,
   } = ctx;
   // A página só aparece depois que as configurações carregaram (ver AppModern), então nunca é null aqui.
   const settings = ctx.settings!;
+  // Sem backup há mais de 7 dias (ou nunca): o backup automático pode estar falhando
+  // (ex.: pasta de backup num pendrive que não está conectado).
+  const backupAge = maintenance ? daysSince(maintenance.lastBackup) : null;
+  const backupStale = maintenance !== null && (backupAge === null || backupAge > 7);
   return (
     <>
       <div className="page-head">
@@ -33,6 +40,21 @@ export function StatusPage({ ctx }: { ctx: AppCtx }) {
           + Novo agendamento
         </button>
       </div>
+      {backupStale && (
+        <div className="warning backup-warning">
+          <span>
+            {backupAge === null
+              ? "Nenhum backup encontrado. Se este computador quebrar, os dados da barbearia se perdem."
+              : `O último backup foi há ${backupAge} dias. Confira se a pasta de backup está disponível.`}
+          </span>
+          <button
+            className="primary small"
+            onClick={() => void mutate(() => desktopApi.createBackup(), "Backup criado.")}
+          >
+            Criar backup agora
+          </button>
+        </div>
+      )}
       <div className="kpi-grid">
         <Kpi label="Faturamento do período" value={money(income)} />
         <Kpi label="Atendimentos concluídos" value={String(concluded)} />

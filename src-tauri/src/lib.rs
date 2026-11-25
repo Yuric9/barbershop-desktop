@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, fs, path::{Path, PathBuf}, sync::Mutex};
 use tauri::{Manager, State};
 
+mod backups;
 mod maintenance;
 mod opening_hours;
 mod operations;
@@ -13,6 +14,26 @@ include!("model_core.rs");
 include!("commands_base.rs");
 include!("commands_finance.rs");
 include!("commands_extra.rs");
+
+/// Backup automático: 30 s depois de abrir e depois a cada hora, verifica se o último
+/// backup tem mais de 24 h e, se tiver, cria um novo (mantendo os 14 automáticos mais recentes).
+fn start_auto_backup(handle: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(30));
+        loop {
+            let state = handle.state::<DbState>();
+            if let Ok(c) = state.connection.lock() {
+                let primary = backup_dir(&state, &c);
+                let fallback = PathBuf::from(&state.storage_root).join("backups");
+                if let Err(e) = backups::run_auto_backup(&c, &primary, &fallback, std::time::SystemTime::now()) {
+                    let log = PathBuf::from(&state.storage_root).join("logs").join("backup-automatico.log");
+                    let _ = fs::write(log, format!("{} {}\n", Local::now().format("%Y-%m-%d %H:%M"), e));
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_secs(60 * 60));
+        }
+    });
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -31,6 +52,7 @@ pub fn run() {
                 storage_mode: mode,
                 storage_root: root.display().to_string(),
             });
+            start_auto_backup(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

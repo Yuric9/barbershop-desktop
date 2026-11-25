@@ -31,3 +31,11 @@ export const emptyWhatsApp: WhatsAppSettings = {
   accessToken: "",
   socialLinksText: "",
 };
+
+/** Dias inteiros desde uma data "AAAA-MM-DD HH:MM" (formato do backup). null se vazia ou inválida. */
+export const daysSince = (value: string) => {
+  if (!value) return null;
+  const t = new Date(value.replace(" ", "T")).getTime();
+  if (Number.isNaN(t)) return null;
+  return Math.floor((Date.now() - t) / 86_400_000);
+};

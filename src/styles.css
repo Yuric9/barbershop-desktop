@@ -230,6 +230,14 @@ h1 {
   padding: 11px 13px;
   line-height: 1.45;
 }
+.backup-warning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
 .error,
 .notice {
   padding: 12px 14px;

@@ -180,7 +180,7 @@ export function useAppState() {
       if (tab === "remarketing") await loadRemarketing();
       // Configurações mostra lista de backups, manutenção e WhatsApp: recarrega para refletir a ação
       // (ex.: o backup recém-criado aparecer na lista sem precisar trocar de aba).
-      if (tab === "configuracoes") await loadTools();
+      if (tab === "configuracoes" || tab === "status") await loadTools();
       return true;
     } catch (e) {
       setError(String(e));
