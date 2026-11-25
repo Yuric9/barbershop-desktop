@@ -1,3 +1,4 @@
+import { Field } from "../components/ui";
 import { money } from "../lib/format";
 import { AppointmentRow } from "../components/AppointmentRow";
 import type { AppCtx } from "../state/useAppState";
@@ -42,50 +43,64 @@ export function AgendaPage({ ctx }: { ctx: AppCtx }) {
       <div className="agenda-layout modern-agenda">
         <form className="card appointment-form" onSubmit={addAppointment}>
           <h2>Novo agendamento</h2>
-          <select name="clientId">
-            <option value="">Cliente avulso</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <Field label="Cliente">
+            <select name="clientId">
+              <option value="">Cliente sem cadastro (preencha abaixo)</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </Field>
           <div className="two">
-            <input name="clientName" placeholder="Nome se avulso" />
-            <input name="phone" placeholder="Telefone" />
+            <Field label="Nome (sem cadastro)">
+              <input name="clientName" placeholder="Ex.: João" />
+            </Field>
+            <Field label="Telefone (sem cadastro)">
+              <input name="phone" placeholder="Ex.: (11) 99999-8888" />
+            </Field>
           </div>
-          <select name="staffId">
-            <option value="">Sem colaborador</option>
-            {staff.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-          <div className="service-picker">
-            {services.map((s) => (
-              <label key={s.id}>
-                <input
-                  type="checkbox"
-                  checked={selectedServices.includes(s.id)}
-                  onChange={() => toggleService(s.id)}
-                />
-                <span>
+          <Field label="Colaborador">
+            <select name="staffId">
+              <option value="">Ainda não definido</option>
+              {staff.map((s) => (
+                <option key={s.id} value={s.id}>
                   {s.name}
-                  <small>
-                    {money(s.priceCents)} · {s.durationMin} min
-                  </small>
-                </span>
-              </label>
-            ))}
+                </option>
+              ))}
+            </select>
+          </Field>
+          {/* Grupo de caixas de seleção: não pode ficar dentro de <label>, por isso é uma <div>. */}
+          <div className="field">
+            <span className="field-label">Serviços (marque um ou mais)</span>
+            <div className="service-picker">
+              {services.map((s) => (
+                <label key={s.id}>
+                  <input
+                    type="checkbox"
+                    checked={selectedServices.includes(s.id)}
+                    onChange={() => toggleService(s.id)}
+                  />
+                  <span>
+                    {s.name}
+                    <small>
+                      {money(s.priceCents)} · {s.durationMin} min
+                    </small>
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
-          <input
-            name="date"
-            type="date"
-            value={agendaDate}
-            onChange={(e) => setAgendaDate(e.target.value)}
-            required
-          />
+          <Field label="Data">
+            <input
+              name="date"
+              type="date"
+              value={agendaDate}
+              onChange={(e) => setAgendaDate(e.target.value)}
+              required
+            />
+          </Field>
           <button
             type="button"
             className="secondary"
@@ -114,7 +129,9 @@ export function AgendaPage({ ctx }: { ctx: AppCtx }) {
               {overtimeWarning() && <div className="warning">{overtimeWarning()}</div>}
             </>
           )}
-          <input name="note" placeholder="Observação" />
+          <Field label="Observação (opcional)">
+            <input name="note" placeholder="Ex.: prefere máquina 2" />
+          </Field>
           <button className="primary" disabled={!selectedTime}>
             Salvar agendamento
           </button>

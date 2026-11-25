@@ -426,10 +426,32 @@ input[type="checkbox"],
 input[type="radio"] {
   accent-color: var(--action);
 }
+/* Campo com rótulo fixo (componente Field). */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.field-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.form,
+.cash-form {
+  align-items: end;
+}
+.filter .field input {
+  width: auto;
+}
+.empty-list {
+  margin: 10px 0;
+}
 .filter {
   display: flex;
   gap: 10px;
-  align-items: center;
+  align-items: end;
   flex-wrap: wrap;
 }
 .filter.compact {

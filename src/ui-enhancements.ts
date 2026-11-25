@@ -85,7 +85,9 @@ function renderThemeControl() {
 
 function markCashField(element: Element | null, role: string) {
   if (!(element instanceof HTMLElement)) return;
-  element.dataset.cashRole = role;
+  // Com rótulo fixo, o item do grid é o <label class="field"> que envolve o campo.
+  const target = element.closest<HTMLElement>("label.field") ?? element;
+  target.dataset.cashRole = role;
 }
 
 function enhanceCash() {

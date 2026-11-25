@@ -1,3 +1,4 @@
+import { Field } from "../components/ui";
 import { desktopApi } from "../desktop-api";
 import { money } from "../lib/format";
 import { EntityPage } from "../components/EntityPage";
@@ -15,13 +16,26 @@ export function ProdutosPage({ ctx }: { ctx: AppCtx }) {
       onRestore={restore}
     >
       <form className="form card" onSubmit={addProduct}>
-        <input name="name" placeholder="Produto" required />
-        <input name="description" placeholder="Descrição" />
-        <input name="price" type="number" min="0.01" step="0.01" placeholder="Preço" required />
-        <input name="stock" type="number" min="0" step="1" defaultValue="0" />
+        <Field label="Nome do produto">
+          <input name="name" placeholder="Ex.: Pomada modeladora" required />
+        </Field>
+        <Field label="Descrição (opcional)">
+          <input name="description" placeholder="Ex.: 120 g, efeito seco" />
+        </Field>
+        <Field label="Preço de venda (R$)">
+          <input name="price" type="number" min="0.01" step="0.01" placeholder="Ex.: 45,00" required />
+        </Field>
+        <Field label="Quantidade em estoque">
+          <input name="stock" type="number" min="0" step="1" defaultValue="0" />
+        </Field>
         <button className="primary">Adicionar produto</button>
       </form>
       <div className="card data-list">
+        {products.length === 0 && (
+          <p className="muted empty-list">
+            Nenhum produto cadastrado. Preencha os campos acima e clique em Adicionar produto.
+          </p>
+        )}
         {products.map((p) => (
           <div className="data-row" key={p.id}>
             <div>
