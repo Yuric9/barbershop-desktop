@@ -78,6 +78,58 @@ fn list_backups(state:State<DbState>)->Result<Vec<BackupItem>,String>{let c=stat
 #[tauri::command]
 fn create_backup(state:State<DbState>)->Result<BackupItem,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;let dir=backup_dir(&state,&c);fs::create_dir_all(&dir).map_err(|e|e.to_string())?;let stamp=Local::now().format("%Y%m%d-%H%M%S").to_string();let path=dir.join(format!("barbershop-backup-{}.db",stamp));let escaped=path.display().to_string().replace('\'',"''");c.execute_batch("PRAGMA wal_checkpoint(FULL);").map_err(|e|e.to_string())?;c.execute_batch(&format!("VACUUM INTO '{}';",escaped)).map_err(|e|e.to_string())?;let meta=fs::metadata(&path).map_err(|e|e.to_string())?;Ok(BackupItem{file_name:path.file_name().and_then(|x|x.to_str()).unwrap_or("").into(),path:path.display().to_string(),size_bytes:meta.len(),created_at:backup_timestamp(&path)})}
 #[tauri::command]
-fn restore_backup(state:State<DbState>,path:String)->Result<(),String>{let source=PathBuf::from(&path);if !source.exists(){return Err("Arquivo de backup não encontrado.".into())}let check=Connection::open(&source).map_err(|e|format!("Backup inválido: {}",e))?;let integrity:String=check.query_row("PRAGMA integrity_check",[],|r|r.get(0)).map_err(|e|e.to_string())?;if integrity!="ok"{return Err(format!("Backup reprovado na verificação: {}",integrity))}drop(check);let mut guard=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;let safety_dir=PathBuf::from(&state.storage_root).join("backups");fs::create_dir_all(&safety_dir).map_err(|e|e.to_string())?;guard.execute_batch("PRAGMA wal_checkpoint(FULL);").map_err(|e|e.to_string())?;let safety=safety_dir.join(format!("pre-restore-{}.db",Local::now().format("%Y%m%d-%H%M%S")));let esc=safety.display().to_string().replace('\'',"''");guard.execute_batch(&format!("VACUUM INTO '{}';",esc)).map_err(|e|e.to_string())?;let memory=Connection::open_in_memory().map_err(|e|e.to_string())?;let old=std::mem::replace(&mut *guard,memory);drop(old);let db=PathBuf::from(&state.database_path);let _=fs::remove_file(format!("{}-wal",state.database_path));let _=fs::remove_file(format!("{}-shm",state.database_path));fs::copy(&source,&db).map_err(|e|e.to_string())?;let reopened=Connection::open(&db).map_err(|e|e.to_string())?;initialize_database(&reopened)?;*guard=reopened;Ok(())}
+fn restore_backup(state:State<DbState>,path:String)->Result<(),String>{
+    let source=PathBuf::from(&path);
+    if !source.exists(){return Err("Arquivo de backup não encontrado.".into())}
+    {
+        let check=Connection::open(&source).map_err(|e|format!("Backup inválido: {}",e))?;
+        let integrity:String=check.query_row("PRAGMA integrity_check",[],|r|r.get(0)).map_err(|e|format!("Backup inválido: {}",e))?;
+        if integrity!="ok"{return Err(format!("Backup reprovado na verificação: {}",integrity))}
+    }
+    let db=PathBuf::from(&state.database_path);
+    // 1) Copia o backup para um arquivo temporário AO LADO do banco, antes de mexer em qualquer coisa.
+    //    Se a cópia falhar (pendrive removido, antivírus), o banco atual continua aberto e intacto.
+    let staging=db.with_extension("db.restoring");
+    let _=fs::remove_file(&staging);
+    fs::copy(&source,&staging).map_err(|e|format!("Não foi possível copiar o backup: {}",e))?;
+    let mut guard=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;
+    // 2) Backup de segurança do banco atual.
+    let safety_dir=PathBuf::from(&state.storage_root).join("backups");
+    fs::create_dir_all(&safety_dir).map_err(|e|e.to_string())?;
+    guard.execute_batch("PRAGMA wal_checkpoint(FULL);").map_err(|e|e.to_string())?;
+    let safety=safety_dir.join(format!("pre-restore-{}.db",Local::now().format("%Y%m%d-%H%M%S")));
+    let esc=safety.display().to_string().replace('\'',"''");
+    guard.execute_batch(&format!("VACUUM INTO '{}';",esc)).map_err(|e|e.to_string())?;
+    // 3) Fecha a conexão atual (troca temporária por um banco em memória).
+    let memory=Connection::open_in_memory().map_err(|e|e.to_string())?;
+    drop(std::mem::replace(&mut *guard,memory));
+    let _=fs::remove_file(format!("{}-wal",state.database_path));
+    let _=fs::remove_file(format!("{}-shm",state.database_path));
+    // 4) Coloca o backup no lugar e reabre. Em QUALQUER falha, volta para a cópia de segurança,
+    //    para o app nunca continuar gravando no banco em memória (dados que sumiriam ao fechar).
+    let replaced=fs::rename(&staging,&db).map_err(|e|e.to_string());
+    let attempt=replaced.clone().and_then(|_|{
+        let reopened=Connection::open(&db).map_err(|e|e.to_string())?;
+        initialize_database(&reopened)?;
+        Ok(reopened)
+    });
+    match attempt{
+        Ok(conn)=>{*guard=conn;Ok(())}
+        Err(err)=>{
+            let _=fs::remove_file(&staging);
+            let rollback=(||->Result<Connection,String>{
+                // Se o arquivo já foi trocado pelo backup, devolve a cópia de segurança para o lugar.
+                if replaced.is_ok()||!db.exists(){fs::copy(&safety,&db).map_err(|e|e.to_string())?;}
+                let conn=Connection::open(&db).map_err(|e|e.to_string())?;
+                initialize_database(&conn)?;
+                Ok(conn)
+            })();
+            match rollback{
+                Ok(conn)=>{*guard=conn;Err(format!("A restauração falhou e o banco anterior foi mantido. Detalhe: {}",err))}
+                Err(e2)=>Err(format!("A restauração falhou ({}) e não foi possível reabrir o banco ({}). Feche o programa e restaure manualmente o arquivo {}",err,e2,safety.display()))
+            }
+        }
+    }
+}
 #[tauri::command]
 fn maintenance_report(state:State<DbState>)->Result<MaintenanceReport,String>{let c=state.connection.lock().map_err(|_|"Banco ocupado".to_string())?;let integrity:String=c.query_row("PRAGMA integrity_check",[],|r|r.get(0)).map_err(|e|e.to_string())?;let schema:i64=c.query_row("SELECT version FROM schema_meta WHERE id=1",[],|r|r.get(0)).map_err(|e|e.to_string())?;let size=fs::metadata(&state.database_path).map(|m|m.len()).unwrap_or(0);let dir=backup_dir(&state,&c);let mut last=String::new();if let Ok(entries)=fs::read_dir(dir){for e in entries.flatten(){let p=e.path();if p.extension().and_then(|x|x.to_str())==Some("db"){let t=backup_timestamp(&p);if t>last{last=t}}}}Ok(MaintenanceReport{integrity,database_size_bytes:size,schema_version:schema,storage_mode:state.storage_mode.clone(),database_path:state.database_path.clone(),last_backup:last})}

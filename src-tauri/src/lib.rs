@@ -55,3 +55,67 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("erro ao iniciar o aplicativo desktop");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn db() -> Connection {
+        let c = Connection::open_in_memory().unwrap();
+        initialize_database(&c).unwrap();
+        c
+    }
+
+    #[test]
+    fn editar_despesa_mantem_liquido_negativo() {
+        let c = db();
+        c.execute("INSERT INTO cash_transactions(kind,description,amount_cents,date,source,sale_type,net_cents,created_at) VALUES('despesa','Aluguel',5000,'2026-11-01','manual','other',-5000,'x')", []).unwrap();
+        let id = c.last_insert_rowid();
+        operations::update_cash_manual(&c, operations::UpdateCashInput { id, description: "Aluguel nov".into(), amount_cents: 6000, date: "2026-11-02".into(), payment_method: None, client_id: None, staff_id: None }).unwrap();
+        let (net, com): (i64, i64) = c.query_row("SELECT net_cents,commission_cents FROM cash_transactions WHERE id=?1", params![id], |r| Ok((r.get(0)?, r.get(1)?))).unwrap();
+        assert_eq!((net, com), (-6000, 0));
+    }
+
+    #[test]
+    fn editar_lancamento_rejeita_data_invalida() {
+        let c = db();
+        c.execute("INSERT INTO cash_transactions(kind,description,amount_cents,date,source,sale_type,net_cents,created_at) VALUES('entrada','Corte',3000,'2026-11-01','manual','service',3000,'x')", []).unwrap();
+        let id = c.last_insert_rowid();
+        let r = operations::update_cash_manual(&c, operations::UpdateCashInput { id, description: "Corte".into(), amount_cents: 3000, date: "31/11/2026".into(), payment_method: None, client_id: None, staff_id: None });
+        assert!(r.is_err());
+    }
+
+    #[test]
+    fn whatsapp_token_nao_vai_para_tela_e_branco_mantem() {
+        let c = db();
+        let mut s = operations::get_whatsapp_settings(&c).unwrap();
+        s.access_token = "EAAB-token-secreto".into();
+        s.api_version = "v23.0".into();
+        s.phone_number_id = "123456".into();
+        let saved = operations::save_whatsapp_settings(&c, s.clone()).unwrap();
+        assert_eq!(saved.access_token, "");
+        assert!(saved.has_access_token);
+        s.access_token = "".into();
+        operations::save_whatsapp_settings(&c, s.clone()).unwrap();
+        assert_eq!(operations::get_whatsapp_settings(&c).unwrap().access_token, "EAAB-token-secreto");
+    }
+
+    #[test]
+    fn whatsapp_rejeita_url_que_nao_e_da_meta() {
+        let c = db();
+        let mut s = operations::get_whatsapp_settings(&c).unwrap();
+        s.api_base_url = "https://servidor-estranho.com".into();
+        assert!(operations::save_whatsapp_settings(&c, s.clone()).is_err());
+        s.api_base_url = "https://graph.facebook.com".into();
+        s.api_version = "v23.0/../../outro".into();
+        assert!(operations::save_whatsapp_settings(&c, s).is_err());
+    }
+
+    #[test]
+    fn whatsapp_desativado_nao_cria_log_pendente() {
+        let c = db();
+        assert!(operations::prepare_whatsapp_send(&c, None, "11999998888", "teste", "oi").is_err());
+        let n: i64 = c.query_row("SELECT COUNT(*) FROM whatsapp_messages", [], |r| r.get(0)).unwrap();
+        assert_eq!(n, 0);
+    }
+}

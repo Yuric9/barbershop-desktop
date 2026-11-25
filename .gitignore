@@ -1,0 +1,26 @@
+# Dependências e builds
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/gen/
+
+# Ícones gerados pelo workflow de CI
+src-tauri/icons/
+
+# Dados locais do app — NUNCA versionar (contêm dados de clientes)
+barbershop-data/
+*.db
+*.db-wal
+*.db-shm
+*.db.restoring
+portable.flag
+
+# Ambiente e editores
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
