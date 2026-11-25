@@ -287,6 +287,7 @@ export const desktopApi = {
   whatsAppSettings: () => invoke<WhatsAppSettings>("get_whatsapp_settings"),
   saveWhatsAppSettings: (input: WhatsAppSettings) =>
     invoke<WhatsAppSettings>("save_whatsapp_settings", { input }),
+  openWhatsAppLink: (phone: string, text: string) => invoke<void>("open_whatsapp_link", { phone, text }),
   sendWhatsAppText: (clientId: number | null, phone: string, messageType: string, text: string) =>
     invoke<WhatsAppSendResult>("send_whatsapp_text", { clientId, phone, messageType, text }),
   businessSettings: () => invoke<BusinessSettings>("get_business_settings"),

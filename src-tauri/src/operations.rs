@@ -137,3 +137,28 @@ pub fn finish_whatsapp_send(c:&Connection,log_id:i64,outcome:Result<String,Strin
   Err(detail)=>{let _=c.execute("UPDATE whatsapp_messages SET status='failed',error_text=?1 WHERE id=?2",params![detail,log_id]);Err(detail)}
  }
 }
+
+/// Monta o link https://wa.me/<número>?text=<mensagem> para abrir o WhatsApp com a mensagem pronta.
+/// Não precisa de conta na Meta: o barbeiro confere e envia pelo próprio WhatsApp.
+/// Números brasileiros sem DDI (10 ou 11 dígitos) ganham o 55 na frente.
+pub fn whatsapp_link(phone:&str,text:&str)->Result<String,String>{
+ let mut number=digits(phone);
+ if number.len()==10||number.len()==11{number=format!("55{number}");}
+ if number.len()<12{return Err("Telefone incompleto. Informe DDD e número para abrir o WhatsApp.".into())}
+ let mut encoded=String::new();
+ for b in text.as_bytes(){match b{b'A'..=b'Z'|b'a'..=b'z'|b'0'..=b'9'|b'-'|b'_'|b'.'|b'~'=>encoded.push(*b as char),_=>encoded.push_str(&format!("%{:02X}",b))}}
+ Ok(format!("https://wa.me/{number}?text={encoded}"))
+}
+
+/// Abre um link https://wa.me no navegador/WhatsApp padrão do sistema.
+pub fn open_whatsapp_link(phone:&str,text:&str)->Result<(),String>{
+ let url=whatsapp_link(phone,text)?;
+ #[cfg(windows)]
+ let result=std::process::Command::new("rundll32").args(["url.dll,FileProtocolHandler",url.as_str()]).spawn();
+ #[cfg(target_os="macos")]
+ let result=std::process::Command::new("open").arg(&url).spawn();
+ #[cfg(all(unix,not(target_os="macos")))]
+ let result=std::process::Command::new("xdg-open").arg(&url).spawn();
+ result.map(|_|()).map_err(|e|format!("Não foi possível abrir o WhatsApp: {e}"))
+}
+

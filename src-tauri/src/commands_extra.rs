@@ -48,6 +48,8 @@ fn edit_appointment_full(state:State<DbState>,input:EditAppointmentFullInput)->R
 #[tauri::command] fn remarketing_clients(state:State<DbState>,minimum_days:i64,reference_date:String)->Result<Vec<operations::RemarketingClient>,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::remarketing_clients(&c,minimum_days,&reference_date)}
 #[tauri::command] fn get_whatsapp_settings(state:State<DbState>)->Result<operations::WhatsAppSettings,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::public_whatsapp_settings(&c)}
 #[tauri::command] fn save_whatsapp_settings(state:State<DbState>,input:operations::WhatsAppSettings)->Result<operations::WhatsAppSettings,String>{let c=state.connection.lock().map_err(|_|BUSY.to_string())?;operations::save_whatsapp_settings(&c,input)}
+#[tauri::command] fn open_whatsapp_link(phone:String,text:String)->Result<(),String>{operations::open_whatsapp_link(&phone,&text)}
+
 // Comando assíncrono: roda fora da thread da janela, então a tela não congela enquanto espera a Meta.
 // O cadeado do banco é solto ANTES da chamada de rede, para o resto do app continuar funcionando.
 #[tauri::command]

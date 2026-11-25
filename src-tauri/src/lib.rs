@@ -70,7 +70,7 @@ pub fn run() {
             archived_items, restore_archived,
             list_opening_hours_cmd, save_opening_hours_cmd,
             remarketing_clients,
-            get_whatsapp_settings, save_whatsapp_settings, send_whatsapp_text,
+            get_whatsapp_settings, save_whatsapp_settings, send_whatsapp_text, open_whatsapp_link,
             get_business_settings, save_business_settings,
             list_backups, create_backup, restore_backup,
             maintenance_report, maintenance_diagnosis, run_maintenance_repair, write_support_report
@@ -173,5 +173,13 @@ mod tests {
         s.access_token = "EAAB-so-do-a".into();
         operations::save_whatsapp_settings(&a, s).unwrap();
         assert!(!operations::get_whatsapp_settings(&b).unwrap().has_access_token);
+    }
+
+    #[test]
+    fn link_do_whatsapp_tem_ddi_e_mensagem_codificada() {
+        let url = operations::whatsapp_link("(11) 99999-8888", "Olá, Diego! 10:00 & tudo").unwrap();
+        assert_eq!(url, "https://wa.me/5511999998888?text=Ol%C3%A1%2C%20Diego%21%2010%3A00%20%26%20tudo");
+        assert!(operations::whatsapp_link("5511999998888", "x").unwrap().starts_with("https://wa.me/5511999998888?"));
+        assert!(operations::whatsapp_link("9999-8888", "x").is_err());
     }
 }

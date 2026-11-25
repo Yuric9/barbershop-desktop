@@ -22,8 +22,14 @@ export function WhatsAppForm({
   }
   return (
     <form className="settings-form" onSubmit={submit}>
+      <p className="muted whatsapp-intro">
+        Sem a API, os botões de WhatsApp abrem o WhatsApp deste computador com a mensagem pronta: é só
+        conferir e enviar. A API oficial da Meta é opcional e envia sozinha as mensagens de cadastro,
+        agendamento e finalização, mas exige conta empresarial verificada na Meta. Mensagens de remarketing
+        pela API só chegam com um modelo aprovado pela Meta.
+      </p>
       <label className="check">
-        <input name="enabled" type="checkbox" defaultChecked={value.enabled} /> Ativar integração oficial
+        <input name="enabled" type="checkbox" defaultChecked={value.enabled} /> Usar a API oficial da Meta
       </label>
       <label>
         Base da API

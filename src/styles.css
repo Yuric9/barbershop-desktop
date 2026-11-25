@@ -651,6 +651,10 @@ input[type="radio"] {
   font-weight: 500;
   line-height: 1.45;
 }
+.whatsapp-intro {
+  margin: 0;
+  font-size: var(--text-sm);
+}
 .settings-form .check {
   flex-direction: row;
   align-items: center;
