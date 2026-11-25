@@ -1,5 +1,5 @@
 use chrono::Local;
-use rusqlite::{Connection, OptionalExtension};
+use rusqlite::Connection;
 use serde::Serialize;
 use std::{fs, path::{Path, PathBuf}};
 
@@ -242,12 +242,4 @@ pub fn write_support_report(log_dir: &Path, diagnosis: &MaintenanceDiagnosis, da
     for action in &diagnosis.recommended_actions { text.push_str(&format!("- {}\n", action)); }
     fs::write(&path, text).map_err(|e| e.to_string())?;
     Ok(path.display().to_string())
-}
-
-pub fn last_backup_path(connection: &Connection) -> Option<String> {
-    connection
-        .query_row("SELECT backup_destination FROM business_settings WHERE id=1", [], |row| row.get::<_, String>(0))
-        .optional()
-        .ok()
-        .flatten()
 }
