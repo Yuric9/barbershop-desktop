@@ -12,7 +12,8 @@ type PendingFormSnapshot = {
   errorRevision: number;
 };
 
-const THEME_KEY = "gestao-barbearia-theme";
+// "-v2": a partir desta versão o tema claro é o padrão; a chave nova faz todos começarem no claro uma vez.
+const THEME_KEY = "gestao-barbearia-theme-v2";
 let scheduled = false;
 let errorRevision = 0;
 let lastErrorText = "";
@@ -20,9 +21,9 @@ let pendingForm: PendingFormSnapshot | null = null;
 
 function readTheme(): UiTheme {
   try {
-    return localStorage.getItem(THEME_KEY) === "light" ? "light" : "dark";
+    return localStorage.getItem(THEME_KEY) === "dark" ? "dark" : "light";
   } catch {
-    return "dark";
+    return "light";
   }
 }
 
@@ -36,8 +37,9 @@ function applyTheme(theme: UiTheme) {
 }
 
 function enhanceThemeSettings() {
-  const settingsTitle = [...document.querySelectorAll(".modern-content > h1")]
-    .find(node => node.textContent?.trim() === "Configurações");
+  const settingsTitle = [...document.querySelectorAll(".modern-content > h1")].find(
+    (node) => node.textContent?.trim() === "Configurações",
+  );
   if (!settingsTitle) return;
 
   const grid = settingsTitle.nextElementSibling;
@@ -75,7 +77,8 @@ function renderThemeControl() {
   const label = button?.querySelector<HTMLElement>(".ui-theme-label");
   if (!button || !label) return;
   const light = document.documentElement.dataset.theme === "light";
-  button.setAttribute("aria-checked", String(light));
+  // A chave fica "ligada" no tema escuro (o claro é o padrão).
+  button.setAttribute("aria-checked", String(!light));
   button.classList.toggle("is-light", light);
   label.textContent = light ? "Tema claro" : "Tema escuro";
 }
@@ -90,8 +93,7 @@ function enhanceCash() {
   if (!form) return;
 
   const kind = form.querySelector<HTMLSelectElement>('select[name="kind"]');
-  const saleType = [...form.querySelectorAll<HTMLSelectElement>("select")]
-    .find(select => !select.name);
+  const saleType = [...form.querySelectorAll<HTMLSelectElement>("select")].find((select) => !select.name);
   const service = form.querySelector<HTMLSelectElement>('select[name="serviceId"]');
   const description = form.querySelector<HTMLInputElement>('input[name="description"]');
   const amount = form.querySelector<HTMLInputElement>('input[name="amount"]');
@@ -118,7 +120,7 @@ function enhanceCash() {
   if (client) client.title = "Cliente";
   if (date) date.title = "Data do lançamento";
   if (payment) payment.title = "Forma de pagamento";
-  if (staff) staff.title = "Colaborador ou administrador";
+  if (staff) staff.title = "Colaborador";
 
   markCashField(kind, "kind");
   markCashField(service, "service");
@@ -134,15 +136,6 @@ function enhanceCash() {
     service.addEventListener("change", () => {
       requestAnimationFrame(() => enhanceCash());
     });
-  }
-
-  let note = form.querySelector<HTMLElement>("[data-cash-reset-note]");
-  if (!note) {
-    note = document.createElement("div");
-    note.className = "cash-reset-note";
-    note.dataset.cashResetNote = "true";
-    note.textContent = "Após salvar, os campos do lançamento são limpos automaticamente para o próximo registro.";
-    form.append(note);
   }
 
   const kpis = document.querySelectorAll<HTMLElement>(".modern-content .kpi-grid .kpi");
@@ -172,18 +165,22 @@ function isCreateForm(form: HTMLFormElement) {
   if (!form.classList.contains("form") || !form.classList.contains("card")) return false;
   const submit = form.querySelector<HTMLButtonElement>('button[type="submit"], button:not([type])');
   const label = submit?.textContent?.trim() || "";
-  return ["Adicionar cliente", "Adicionar serviço", "Adicionar colaborador", "Adicionar produto"].includes(label);
+  return ["Adicionar cliente", "Adicionar serviço", "Adicionar colaborador", "Adicionar produto"].includes(
+    label,
+  );
 }
 
 function snapshotForm(form: HTMLFormElement): PendingFormSnapshot {
-  const controls = [...form.querySelectorAll<FormControl>("input[name], select[name], textarea[name]")]
-    .map(element => ({
+  const controls = [...form.querySelectorAll<FormControl>("input[name], select[name], textarea[name]")].map(
+    (element) => ({
       element,
       value: element.value,
-      checked: element instanceof HTMLInputElement && ["checkbox", "radio"].includes(element.type)
-        ? element.checked
-        : undefined,
-    }));
+      checked:
+        element instanceof HTMLInputElement && ["checkbox", "radio"].includes(element.type)
+          ? element.checked
+          : undefined,
+    }),
+  );
   return { form, controls, errorRevision };
 }
 
@@ -218,10 +215,12 @@ function setControlValue(element: FormControl, value: string, checked?: boolean)
 }
 
 function restoreFailedForm(snapshot: PendingFormSnapshot) {
-  snapshot.controls.forEach(control => setControlValue(control.element, control.value, control.checked));
-  const first = snapshot.controls.find(control => {
+  snapshot.controls.forEach((control) => setControlValue(control.element, control.value, control.checked));
+  const first = snapshot.controls.find((control) => {
     const element = control.element;
-    return element.isConnected && !element.hasAttribute("data-ui-hidden") && !element.hasAttribute("disabled");
+    return (
+      element.isConnected && !element.hasAttribute("data-ui-hidden") && !element.hasAttribute("disabled")
+    );
   });
   first?.element.focus();
 }
@@ -230,26 +229,36 @@ function auditFormResetBehavior() {
   if (document.documentElement.dataset.formResetAudit === "ready") return;
   document.documentElement.dataset.formResetAudit = "ready";
 
-  document.addEventListener("submit", event => {
-    const form = event.target;
-    if (!(form instanceof HTMLFormElement) || !isCreateForm(form)) return;
-    updateErrorRevision();
-    pendingForm = snapshotForm(form);
-  }, true);
-
-  document.addEventListener("reset", event => {
-    const form = event.target;
-    if (!(form instanceof HTMLFormElement) || !pendingForm || pendingForm.form !== form) return;
-    const snapshot = pendingForm;
-    pendingForm = null;
-
-    requestAnimationFrame(() => requestAnimationFrame(() => {
+  document.addEventListener(
+    "submit",
+    (event) => {
+      const form = event.target;
+      if (!(form instanceof HTMLFormElement) || !isCreateForm(form)) return;
       updateErrorRevision();
-      if (currentErrorText() && errorRevision > snapshot.errorRevision) {
-        restoreFailedForm(snapshot);
-      }
-    }));
-  }, true);
+      pendingForm = snapshotForm(form);
+    },
+    true,
+  );
+
+  document.addEventListener(
+    "reset",
+    (event) => {
+      const form = event.target;
+      if (!(form instanceof HTMLFormElement) || !pendingForm || pendingForm.form !== form) return;
+      const snapshot = pendingForm;
+      pendingForm = null;
+
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          updateErrorRevision();
+          if (currentErrorText() && errorRevision > snapshot.errorRevision) {
+            restoreFailedForm(snapshot);
+          }
+        }),
+      );
+    },
+    true,
+  );
 }
 
 function enhanceAll() {

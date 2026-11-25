@@ -1,6 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./AppModern";
+import "@fontsource-variable/manrope";
+import "./tokens.css";
 import "./styles.css";
 import "./enhancements.css";
 import "./ui-enhancements";

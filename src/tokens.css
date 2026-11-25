@@ -1,0 +1,121 @@
+/*
+ * Tokens de design — "balcão claro".
+ * Toda cor do app vem daqui. Para mudar o visual, mude os valores abaixo;
+ * os outros arquivos CSS só usam var(--...).
+ *
+ * Regra de uso das cores:
+ * - petróleo (--action*): tudo que é AÇÃO (botões, item ativo do menu, foco, seleção).
+ * - ouro (--gold*): só DESTAQUE de dinheiro que importa (resultado, total a cobrar).
+ * - verde/vermelho: entrada/despesa e mensagens de sucesso/erro.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Superfícies */
+  --bg: #f6f7f8;
+  --surface: #ffffff;
+  --surface-sunken: #f0f3f4;
+  --surface-hover: #eef2f3;
+  --field: #ffffff;
+
+  /* Texto */
+  --ink: #1c2228;
+  --ink-soft: #56616b;
+  --ink-faint: #66727c;
+
+  /* Linhas */
+  --line: #e1e6e9;
+  --line-strong: #c9d1d6;
+
+  /* Ação (petróleo) */
+  --action: #1f5f6b;
+  --action-hover: #184e58;
+  --action-ink: #ffffff;
+  --action-tint: #e4eff1;
+  --action-text: #1f5f6b;
+  --focus-ring: #1f5f6b40;
+
+  /* Destaque (ouro) */
+  --gold: #b58a2e;
+  --gold-text: #8a6619;
+  --gold-tint: #f6eedb;
+
+  /* Estados */
+  --positive: #2e7d4f;
+  --positive-tint: #e6f3eb;
+  --positive-line: #a9d3b8;
+  --negative: #b3373d;
+  --negative-tint: #fbebec;
+  --negative-line: #e3a7aa;
+  --warning: #7a5a12;
+  --warning-tint: #fbf3df;
+  --warning-line: #e2c98a;
+  --info: #5b4a8a;
+  --info-tint: #efebf8;
+
+  --backdrop: #1c222866;
+  --drawer-shadow: -18px 0 50px #1c22281f;
+
+  /* Forma */
+  --radius-panel: 12px;
+  --radius-control: 8px;
+  --radius-pill: 999px;
+
+  /* Tipografia */
+  --font: "Manrope Variable", "Segoe UI", system-ui, sans-serif;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 15px;
+  --text-lg: 17px;
+  --text-xl: 26px;
+  --text-num: 28px;
+
+  /* Seta das caixas de seleção (cor = --ink-soft) */
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2356616b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #12171a;
+  --surface: #192024;
+  --surface-sunken: #11171a;
+  --surface-hover: #212a2f;
+  --field: #11171a;
+
+  --ink: #e6ebee;
+  --ink-soft: #a3aeb6;
+  --ink-faint: #8a969e;
+
+  --line: #263036;
+  --line-strong: #36434b;
+
+  --action: #5ba4b2;
+  --action-hover: #72b5c2;
+  --action-ink: #0b1a1e;
+  --action-tint: #1a3338;
+  --action-text: #7cc0cc;
+  --focus-ring: #5ba4b255;
+
+  --gold: #d4aa4f;
+  --gold-text: #e0bc6a;
+  --gold-tint: #2c2617;
+
+  --positive: #7cc79a;
+  --positive-tint: #15281d;
+  --positive-line: #2f5a40;
+  --negative: #ee8c8f;
+  --negative-tint: #31191b;
+  --negative-line: #6b3236;
+  --warning: #e8cd85;
+  --warning-tint: #2a2414;
+  --warning-line: #6b5a2c;
+  --info: #c3b2f0;
+  --info-tint: #262039;
+
+  --backdrop: #000000a0;
+  --drawer-shadow: -18px 0 50px #00000080;
+
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23a3aeb6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}

@@ -7,6 +7,7 @@ use tauri::{Manager, State};
 mod maintenance;
 mod opening_hours;
 mod operations;
+mod secrets;
 
 include!("model_core.rs");
 include!("commands_base.rs");
@@ -117,5 +118,38 @@ mod tests {
         assert!(operations::prepare_whatsapp_send(&c, None, "11999998888", "teste", "oi").is_err());
         let n: i64 = c.query_row("SELECT COUNT(*) FROM whatsapp_messages", [], |r| r.get(0)).unwrap();
         assert_eq!(n, 0);
+    }
+
+    #[test]
+    fn token_salvo_fica_no_cofre_e_nao_no_banco() {
+        let c = db();
+        let mut s = operations::get_whatsapp_settings(&c).unwrap();
+        s.access_token = "EAAB-cofre".into();
+        operations::save_whatsapp_settings(&c, s).unwrap();
+        let no_banco: String = c.query_row("SELECT access_token FROM whatsapp_settings WHERE id=1", [], |r| r.get(0)).unwrap();
+        assert_eq!(no_banco, "", "o token não pode ficar gravado no banco (iria junto nos backups)");
+        assert_eq!(operations::get_whatsapp_settings(&c).unwrap().access_token, "EAAB-cofre");
+    }
+
+    #[test]
+    fn token_antigo_no_banco_e_migrado_para_o_cofre() {
+        let c = db();
+        c.execute("UPDATE whatsapp_settings SET access_token='EAAB-legado' WHERE id=1", []).unwrap();
+        let s = operations::get_whatsapp_settings(&c).unwrap();
+        assert_eq!(s.access_token, "EAAB-legado");
+        assert!(s.has_access_token);
+        let no_banco: String = c.query_row("SELECT access_token FROM whatsapp_settings WHERE id=1", [], |r| r.get(0)).unwrap();
+        assert_eq!(no_banco, "");
+        assert_eq!(operations::get_whatsapp_settings(&c).unwrap().access_token, "EAAB-legado");
+    }
+
+    #[test]
+    fn cada_banco_tem_sua_propria_referencia_no_cofre() {
+        let a = db();
+        let b = db();
+        let mut s = operations::get_whatsapp_settings(&a).unwrap();
+        s.access_token = "EAAB-so-do-a".into();
+        operations::save_whatsapp_settings(&a, s).unwrap();
+        assert!(!operations::get_whatsapp_settings(&b).unwrap().has_access_token);
     }
 }

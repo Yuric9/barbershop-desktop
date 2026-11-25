@@ -1,3 +1,6 @@
+/// Mensagem quando outro comando está usando o banco (o cadeado ainda está fechado).
+const BUSY: &str = "O app está terminando outra operação. Tente de novo em instantes.";
+
 struct DbState {
     connection: Mutex<Connection>,
     database_path: String,
