@@ -445,6 +445,9 @@ input[type="radio"] {
 .filter .field input {
   width: auto;
 }
+.period-hint {
+  flex-basis: 100%;
+}
 .empty-list {
   margin: 10px 0;
 }
