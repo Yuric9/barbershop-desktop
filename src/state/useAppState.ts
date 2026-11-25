@@ -170,12 +170,17 @@ export function useAppState() {
   }
   async function mutate(action: () => Promise<unknown>, message: string) {
     try {
+      // Limpa as mensagens da ação anterior, para um erro novo não aparecer junto com um "sucesso" antigo.
       setError("");
+      setNotice("");
       await action();
       setNotice(message);
       await refresh();
       if (tab === "relatorios") await loadReport();
       if (tab === "remarketing") await loadRemarketing();
+      // Configurações mostra lista de backups, manutenção e WhatsApp: recarrega para refletir a ação
+      // (ex.: o backup recém-criado aparecer na lista sem precisar trocar de aba).
+      if (tab === "configuracoes") await loadTools();
       return true;
     } catch (e) {
       setError(String(e));
