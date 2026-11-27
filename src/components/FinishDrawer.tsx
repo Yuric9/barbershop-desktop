@@ -13,9 +13,15 @@ export function FinishDrawer({
 }) {
   return (
     <div className="drawer-backdrop" onMouseDown={onClose}>
-      <aside className="drawer compact-drawer" onMouseDown={(e) => e.stopPropagation()}>
+      <aside
+        className="drawer compact-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="finish-drawer-title"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <div className="drawer-head">
-          <h2>Finalizar atendimento</h2>
+          <h2 id="finish-drawer-title">Finalizar atendimento</h2>
           <button type="button" onClick={onClose} aria-label="Fechar">
             <span aria-hidden="true">×</span>
           </button>

@@ -1,3 +1,4 @@
+import { formatDate } from "../lib/format";
 import { Field } from "../components/ui";
 import { EntityPage } from "../components/EntityPage";
 import type { AppCtx } from "../state/useAppState";
@@ -36,7 +37,7 @@ export function ClientesPage({ ctx }: { ctx: AppCtx }) {
               <b>{c.name}</b>
               <small>
                 {c.phone}
-                {c.birthDate ? ` · Aniversário ${c.birthDate.split("-").reverse().join("/")}` : ""}
+                {c.birthDate ? ` · Aniversário ${formatDate(c.birthDate)}` : ""}
               </small>
             </div>
             <div className="row-actions">

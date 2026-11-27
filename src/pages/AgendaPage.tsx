@@ -1,5 +1,5 @@
 import { Field } from "../components/ui";
-import { money } from "../lib/format";
+import { money, formatDate } from "../lib/format";
 import { AppointmentRow } from "../components/AppointmentRow";
 import type { AppCtx } from "../state/useAppState";
 
@@ -139,7 +139,7 @@ export function AgendaPage({ ctx }: { ctx: AppCtx }) {
           </button>
         </form>
         <div className="card">
-          <h2>{agendaDate.split("-").reverse().join("/")}</h2>
+          <h2>{formatDate(agendaDate)}</h2>
           {appointments.length ? (
             appointments.map((a) => (
               <AppointmentRow

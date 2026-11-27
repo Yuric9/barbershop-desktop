@@ -1,4 +1,4 @@
-import { money } from "../lib/format";
+import { money, formatDate } from "../lib/format";
 import { Kpi, Field } from "../components/ui";
 import type { AppCtx } from "../state/useAppState";
 
@@ -200,7 +200,7 @@ export function CaixaPage({ ctx }: { ctx: AppCtx }) {
               <div>
                 <b>{i.description}</b>
                 <small>
-                  {i.date.split("-").reverse().join("/")} · {i.paymentMethod || "Sem forma"}
+                  {formatDate(i.date)} · {i.paymentMethod || "Sem forma"}
                   {i.staffName ? ` · ${i.staffName}` : ""}
                   {i.saleType === "service" ? " · Atendimento" : ""}
                 </small>

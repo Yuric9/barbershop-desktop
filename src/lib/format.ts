@@ -10,6 +10,20 @@ export const monthStart = () =>
 // Formato brasileiro com separador de milhar: R$ 1.500,00 e -R$ 1.453,00.
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 export const money = (c: number) => brl.format(c / 100);
+
+// Datas "AAAA-MM-DD" são lidas em UTC para não "voltar um dia" no fuso do Brasil.
+const brDate = new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" });
+/** "2026-11-27" → "27/11/2026". Valor vazio ou inválido volta como veio. */
+export const formatDate = (iso: string) => {
+  const d = new Date(`${iso}T00:00:00Z`);
+  return iso && !Number.isNaN(d.getTime()) ? brDate.format(d) : iso;
+};
+const brDateTime = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
+/** "2026-11-27 14:30:00" → "27/11/2026 14:30". */
+export const formatDateTime = (value: string) => {
+  const d = new Date(value.replace(" ", "T"));
+  return value && !Number.isNaN(d.getTime()) ? brDateTime.format(d) : value;
+};
 export const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 export const emptySettings: BusinessSettings = {
   businessName: "",

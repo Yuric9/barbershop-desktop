@@ -3,6 +3,8 @@ import type { Client, Service, Staff } from "../desktop-api";
 import { desktopApi } from "../desktop-api";
 import type { EditTarget } from "../app-types";
 
+const PAYMENT_METHODS = ["Dinheiro", "Pix", "Débito", "Crédito"];
+
 // Nome que aparece no título da gaveta para cada tipo de registro.
 const kindTitle: Record<EditTarget["kind"], string> = {
   client: "cliente",
@@ -104,9 +106,15 @@ export function EditDrawer({
   }
   return (
     <div className="drawer-backdrop" onMouseDown={onClose}>
-      <aside className="drawer" onMouseDown={(e) => e.stopPropagation()}>
+      <aside
+        className="drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-drawer-title"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <div className="drawer-head">
-          <h2>Editar {kindTitle[target.kind]}</h2>
+          <h2 id="edit-drawer-title">Editar {kindTitle[target.kind]}</h2>
           <button type="button" onClick={onClose} aria-label="Fechar">
             <span aria-hidden="true">×</span>
           </button>
@@ -228,7 +236,19 @@ export function EditDrawer({
               </label>
               <label>
                 Pagamento
-                <input name="paymentMethod" defaultValue={target.item.paymentMethod} />
+                <select name="paymentMethod" defaultValue={target.item.paymentMethod}>
+                  {/* Lançamento antigo com forma digitada à mão: mantém o valor como opção. */}
+                  {!PAYMENT_METHODS.includes(target.item.paymentMethod) && (
+                    <option value={target.item.paymentMethod}>
+                      {target.item.paymentMethod || "Sem forma"}
+                    </option>
+                  )}
+                  {PAYMENT_METHODS.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label>
                 Cliente
@@ -315,7 +335,7 @@ export function EditDrawer({
             </>
           )}
           <button className="primary" disabled={busy}>
-            {busy ? "Salvando..." : "Salvar alterações"}
+            {busy ? "Salvando…" : "Salvar alterações"}
           </button>
         </form>
       </aside>

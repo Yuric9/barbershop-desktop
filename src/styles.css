@@ -797,6 +797,7 @@ input[type="radio"] {
   justify-content: flex-end;
 }
 .drawer {
+  overscroll-behavior: contain;
   position: relative;
   top: auto;
   height: 100vh;
