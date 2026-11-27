@@ -429,6 +429,13 @@ export function useAppState() {
     }
   }
   async function changeStatus(a: Appointment, status: string) {
+    if (
+      status === "Cancelado" &&
+      !window.confirm(
+        `Cancelar o agendamento de ${a.clientName} às ${a.time}? O horário volta a ficar livre.`,
+      )
+    )
+      return;
     await mutate(() => desktopApi.updateAppointment({ id: a.id, status }), "Agendamento atualizado.");
   }
 

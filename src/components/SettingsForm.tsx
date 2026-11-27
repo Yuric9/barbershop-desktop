@@ -37,11 +37,11 @@ export function SettingsForm({
       <div className="two">
         <label>
           Telefone
-          <input name="phone" defaultValue={values.phone} />
+          <input name="phone" type="tel" autoComplete="tel" defaultValue={values.phone} />
         </label>
         <label>
           WhatsApp
-          <input name="whatsapp" defaultValue={values.whatsapp} />
+          <input name="whatsapp" type="tel" autoComplete="tel" defaultValue={values.whatsapp} />
         </label>
       </div>
       <label>

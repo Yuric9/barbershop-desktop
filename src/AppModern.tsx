@@ -103,8 +103,16 @@ export default function AppModern() {
             </button>
           </div>
         )}
-        {error && <div className="error">{error}</div>}
-        {notice && <div className="notice">{notice}</div>}
+        {error && (
+          <div className="error" role="alert">
+            {error}
+          </div>
+        )}
+        {notice && (
+          <div className="notice" role="status" aria-live="polite">
+            {notice}
+          </div>
+        )}
 
         {tab === "status" && <StatusPage ctx={ctx} />}
 
