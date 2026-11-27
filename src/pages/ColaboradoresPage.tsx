@@ -51,7 +51,7 @@ export function ColaboradoresPage({ ctx }: { ctx: AppCtx }) {
           <input name="name" placeholder="Ex.: Bruno" required />
         </Field>
         <Field label="Telefone (opcional)">
-          <input name="phone" placeholder="Ex.: (11) 98888-7777" />
+          <input name="phone" type="tel" autoComplete="tel" placeholder="Ex.: (11) 98888-7777" />
         </Field>
         <Field label="Comissão em serviços (%)">
           <input name="commission" type="number" min="0" max="100" defaultValue="40" />

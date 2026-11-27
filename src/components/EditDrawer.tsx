@@ -3,6 +3,16 @@ import type { Client, Service, Staff } from "../desktop-api";
 import { desktopApi } from "../desktop-api";
 import type { EditTarget } from "../app-types";
 
+// Nome que aparece no título da gaveta para cada tipo de registro.
+const kindTitle: Record<EditTarget["kind"], string> = {
+  client: "cliente",
+  service: "serviço",
+  staff: "colaborador",
+  product: "produto",
+  cash: "lançamento",
+  appointment: "agendamento",
+};
+
 export function EditDrawer({
   target,
   clients,
@@ -96,10 +106,16 @@ export function EditDrawer({
     <div className="drawer-backdrop" onMouseDown={onClose}>
       <aside className="drawer" onMouseDown={(e) => e.stopPropagation()}>
         <div className="drawer-head">
-          <h2>Editar {target.kind}</h2>
-          <button onClick={onClose}>×</button>
+          <h2>Editar {kindTitle[target.kind]}</h2>
+          <button type="button" onClick={onClose} aria-label="Fechar">
+            <span aria-hidden="true">×</span>
+          </button>
         </div>
-        {err && <div className="error">{err}</div>}
+        {err && (
+          <div className="error" role="alert">
+            {err}
+          </div>
+        )}
         <form className="drawer-form" onSubmit={submit}>
           {target.kind === "client" && (
             <>
@@ -109,7 +125,7 @@ export function EditDrawer({
               </label>
               <label>
                 Telefone
-                <input name="phone" defaultValue={target.item.phone} />
+                <input name="phone" type="tel" autoComplete="tel" defaultValue={target.item.phone} />
               </label>
               <label>
                 Aniversário
@@ -146,7 +162,7 @@ export function EditDrawer({
               </label>
               <label>
                 Telefone
-                <input name="phone" defaultValue={target.item.phone} />
+                <input name="phone" type="tel" autoComplete="tel" defaultValue={target.item.phone} />
               </label>
               <label>
                 Comissão serviços %
@@ -257,7 +273,7 @@ export function EditDrawer({
               </label>
               <label>
                 Telefone
-                <input name="phone" defaultValue={target.item.phone} />
+                <input name="phone" type="tel" autoComplete="tel" defaultValue={target.item.phone} />
               </label>
               <label>
                 Colaborador

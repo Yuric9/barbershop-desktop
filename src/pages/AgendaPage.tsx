@@ -60,7 +60,7 @@ export function AgendaPage({ ctx }: { ctx: AppCtx }) {
               <input name="clientName" placeholder="Ex.: João" />
             </Field>
             <Field label="Telefone (sem cadastro)">
-              <input name="phone" placeholder="Ex.: (11) 99999-8888" />
+              <input name="phone" type="tel" autoComplete="tel" placeholder="Ex.: (11) 99999-8888" />
             </Field>
           </div>
           <Field label="Colaborador">

@@ -16,7 +16,9 @@ export function FinishDrawer({
       <aside className="drawer compact-drawer" onMouseDown={(e) => e.stopPropagation()}>
         <div className="drawer-head">
           <h2>Finalizar atendimento</h2>
-          <button onClick={onClose}>×</button>
+          <button type="button" onClick={onClose} aria-label="Fechar">
+            <span aria-hidden="true">×</span>
+          </button>
         </div>
         <div className="checkout-total">
           <span>{item.clientName}</span>

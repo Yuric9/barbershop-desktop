@@ -17,7 +17,7 @@ export function ClientesPage({ ctx }: { ctx: AppCtx }) {
           <input name="name" placeholder="Ex.: Diego Souza" required />
         </Field>
         <Field label="Telefone com DDD">
-          <input name="phone" placeholder="Ex.: (11) 99999-8888" required />
+          <input name="phone" type="tel" autoComplete="tel" placeholder="Ex.: (11) 99999-8888" required />
         </Field>
         <Field label="Aniversário (opcional)">
           <input name="birthDate" type="date" />
