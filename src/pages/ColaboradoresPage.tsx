@@ -1,5 +1,5 @@
 import { Field } from "../components/ui";
-import { money, plural } from "../lib/format";
+import { money, plural, formatDate, formatDateTime } from "../lib/format";
 import { EntityPage } from "../components/EntityPage";
 import type { AppCtx } from "../state/useAppState";
 
@@ -117,7 +117,7 @@ export function ColaboradoresPage({ ctx }: { ctx: AppCtx }) {
               <div className="data-row" key={s.id}>
                 <div>
                   <b>
-                    {s.startDate.split("-").reverse().join("/")} a {s.endDate.split("-").reverse().join("/")}
+                    {formatDate(s.startDate)} a {formatDate(s.endDate)}
                   </b>
                   <small>
                     Produção {money(s.grossCents)} · Comissão paga {money(s.commissionCents)} · Parte da
@@ -125,8 +125,7 @@ export function ColaboradoresPage({ ctx }: { ctx: AppCtx }) {
                   </small>
                   <small>
                     {plural(s.serviceSales, "serviço", "serviços")} ·{" "}
-                    {plural(s.productSales, "produto", "produtos")} · fechado em{" "}
-                    {new Date(s.createdAt).toLocaleString("pt-BR")}
+                    {plural(s.productSales, "produto", "produtos")} · fechado em {formatDateTime(s.createdAt)}
                   </small>
                 </div>
                 <button onClick={() => void reopenSettlement(s)}>Reabrir</button>

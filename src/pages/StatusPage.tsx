@@ -1,4 +1,4 @@
-import { daysSince, money } from "../lib/format";
+import { daysSince, money, formatDate } from "../lib/format";
 import { desktopApi } from "../desktop-api";
 import { Kpi, Metric } from "../components/ui";
 import { AppointmentRow } from "../components/AppointmentRow";
@@ -66,7 +66,7 @@ export function StatusPage({ ctx }: { ctx: AppCtx }) {
       </div>
       <div className="split">
         <div className="card">
-          <h2>Agenda de {agendaDate.split("-").reverse().join("/")}</h2>
+          <h2>Agenda de {formatDate(agendaDate)}</h2>
           {appointments.length ? (
             appointments.map((a) => (
               <AppointmentRow

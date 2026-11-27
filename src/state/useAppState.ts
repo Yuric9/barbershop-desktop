@@ -20,7 +20,7 @@ import type {
   UpdateInfo,
 } from "../desktop-api";
 import { desktopApi } from "../desktop-api";
-import { localDate, monthStart, money, emptyWhatsApp } from "../lib/format";
+import { localDate, monthStart, money, emptyWhatsApp, formatDate } from "../lib/format";
 import type { Tab, EditTarget } from "../app-types";
 
 export function useAppState() {
@@ -377,7 +377,7 @@ export function useAppState() {
     }
   }
   function appointmentMessage(a: Appointment) {
-    return `Olá, ${a.clientName}! Seu agendamento na ${settings?.businessName || "barbearia"} foi registrado.\n\n${a.serviceNames}\n${a.date.split("-").reverse().join("/")} às ${a.time}\nProfissional: ${a.staffName}\nDuração: ${a.durationMin} min\nValor: ${money(a.totalCents)}\n\nResponda CONFIRMO para confirmar o horário.`;
+    return `Olá, ${a.clientName}! Seu agendamento na ${settings?.businessName || "barbearia"} foi registrado.\n\n${a.serviceNames}\n${formatDate(a.date)} às ${a.time}\nProfissional: ${a.staffName}\nDuração: ${a.durationMin} min\nValor: ${money(a.totalCents)}\n\nResponda CONFIRMO para confirmar o horário.`;
   }
   /**
    * Botões de WhatsApp: com a API da Meta ativa, envia direto; sem ela (o padrão),
@@ -550,7 +550,7 @@ export function useAppState() {
     }
     if (
       !window.confirm(
-        `Fechar ${item.name} de ${settlementStart.split("-").reverse().join("/")} a ${settlementEnd.split("-").reverse().join("/")}?\n\nProdução: ${money(p.grossCents)}\nComissão a pagar: ${money(p.commissionCents)}\nParte da barbearia: ${money(p.netCents)}`,
+        `Fechar ${item.name} de ${formatDate(settlementStart)} a ${formatDate(settlementEnd)}?\n\nProdução: ${money(p.grossCents)}\nComissão a pagar: ${money(p.commissionCents)}\nParte da barbearia: ${money(p.netCents)}`,
       )
     )
       return;
@@ -563,7 +563,7 @@ export function useAppState() {
   async function reopenSettlement(item: StaffSettlement) {
     if (
       !window.confirm(
-        `Reabrir o fechamento de ${item.staffName} (${item.startDate.split("-").reverse().join("/")} a ${item.endDate.split("-").reverse().join("/")})? Os lançamentos voltarão para o saldo em aberto.`,
+        `Reabrir o fechamento de ${item.staffName} (${formatDate(item.startDate)} a ${formatDate(item.endDate)})? Os lançamentos voltarão para o saldo em aberto.`,
       )
     )
       return;

@@ -66,6 +66,7 @@ export function ConfiguracoesPage({ ctx }: { ctx: AppCtx }) {
                   <small>{b.createdAt}</small>
                 </div>
                 <button
+                  className="danger"
                   onClick={() => {
                     if (
                       window.confirm(

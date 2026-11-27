@@ -1,5 +1,5 @@
 import { Field } from "../components/ui";
-import { money } from "../lib/format";
+import { money, formatDate } from "../lib/format";
 import type { AppCtx } from "../state/useAppState";
 
 export function RemarketingPage({ ctx }: { ctx: AppCtx }) {
@@ -45,9 +45,7 @@ export function RemarketingPage({ ctx }: { ctx: AppCtx }) {
                   {money(c.totalSpentCents)} gastos
                 </small>
                 <small>
-                  {c.lastVisit
-                    ? `Última visita ${c.lastVisit.split("-").reverse().join("/")}`
-                    : "Sem atendimento registrado"}
+                  {c.lastVisit ? `Última visita ${formatDate(c.lastVisit)}` : "Sem atendimento registrado"}
                 </small>
               </div>
               <div className="row-actions">
