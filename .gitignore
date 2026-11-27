@@ -15,6 +15,10 @@ barbershop-data/
 *.db.restoring
 portable.flag
 
+# Resultados dos testes Playwright
+test-results/
+playwright-report/
+
 # Ambiente e editores
 .env
 .env.*

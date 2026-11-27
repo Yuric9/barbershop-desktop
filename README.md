@@ -112,10 +112,15 @@ Dentro da pasta: `data/barbershop.db`, `backups/`, `logs/`, `assets/` e `config/
    ```bash
    npm run tauri:dev
    ```
-4. Testes do backend e formatação do código:
+4. Testes do backend, da interface e formatação do código:
    ```bash
    cd src-tauri && cargo test
    ```
+   ```bash
+   npm test
+   ```
+   Os testes da interface (`tests/`) usam Playwright: abrem o app num navegador com um backend falso
+   (`tests/fake-backend.ts`) e conferem Agenda, Clientes e Caixa. Também rodam sozinhos em todo pull request.
    ```bash
    npm run format
    ```
